@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Eclipse — серый макет</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f1f1f0;--card:#fff;--ink:#1c1c1c;--mute:#7a7a78;--line:#d8d8d6;--ph:#cfcfcd;--ph2:#b9b9b6;--on:#1c1c1c;--hl:#3d3d3b}
+body.night{--bg:#1d1d1f;--card:#29292c;--ink:#f1f1f0;--mute:#9a9a9c;--line:#3c3c40;--ph:#3a3a3e;--ph2:#4a4a4f;--on:#f1f1f0;--hl:#e4e4e4}
+html,body{height:100%}
+body{font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);transition:background .5s,color .5s}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+.app{max-width:1100px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 14px 8px}
+.hrow{display:flex;align-items:center;gap:10px}
+.logo{font-weight:700;letter-spacing:.18em;font-size:14px}
+.tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:2px 8px;color:var(--mute);white-space:nowrap}
+.sp{flex:1}
+.lang{display:flex;flex:none}.lang button{font-size:12px;padding:4px 4px;color:var(--mute)}
+.lang button.on{color:var(--ink);font-weight:700}
+.ecl{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);position:relative;overflow:hidden;background:var(--card)}
+.ecl i{position:absolute;inset:7px;border-radius:50%;background:var(--ink)}
+.ecl b{position:absolute;inset:7px;border-radius:50%;background:var(--card);transform:translateX(120%);transition:transform .5s}
+body.night .ecl b{transform:translateX(28%)}
+.crumbs{font-size:12px;color:var(--mute);margin-top:6px;white-space:nowrap;overflow-x:auto}
+.crumbs a{text-decoration:none}.crumbs a:hover{text-decoration:underline}
+.crumbs span.cur{color:var(--ink);font-weight:600}
+main{flex:1;padding:14px 14px 96px}
+h1{font-size:26px;line-height:1.15;margin-bottom:6px}
+h2{font-size:19px;margin-bottom:10px}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:18px 0 8px}
+p.lead{color:var(--mute);margin-bottom:12px}
+.ph{background:repeating-linear-gradient(135deg,var(--ph),var(--ph) 12px,var(--ph2) 12px,var(--ph2) 13px);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink);font-size:12px;padding:10px;position:relative}
+.ph small{background:var(--card);padding:3px 8px;border-radius:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:600}
+.btn.pri{background:var(--on);color:var(--bg);border-color:var(--on)}
+.btn.sm{min-height:36px;padding:0 11px;font-size:13px;font-weight:500}
+.btn.on{background:var(--on);color:var(--bg);border-color:var(--on)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row.fill>*{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat b{display:block;font-size:20px}.stat span{font-size:12px;color:var(--mute)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.chips .btn{white-space:nowrap;flex:none}
+.list{display:flex;flex-direction:column;gap:6px}
+.li{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;width:100%}
+.li.on{border-color:var(--on)}
+.li .t{flex:1}.li .m{font-size:12px;color:var(--mute)}
+.note{font-size:12px;color:var(--mute);margin-top:10px}
+/* building */
+.bld{display:flex;flex-direction:column;gap:5px;max-width:560px;margin:0 auto}
+.fl{display:flex;align-items:stretch;gap:5px}
+.fl>.lab{width:44px;font-size:11px;color:var(--mute);display:flex;align-items:center}
+.fl>.us{flex:1;display:flex;gap:4px;justify-content:center}
+.u{flex:1;min-height:44px;border-radius:6px;background:var(--ph);border:1px solid var(--line);font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;padding:3px}
+.u.dim{opacity:.25}
+.u.sold{background:transparent;border-style:dashed;color:var(--mute)}
+.u.res{background:var(--ph2)}
+.u.hit{border:2px solid var(--on)}
+.fl.ph4 .us{padding:0 12%}.fl.f4 .us{padding:0 6%}
+.plan{display:grid;gap:6px}
+.plan .u{min-height:96px;font-size:12px}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--mute);margin-top:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:4px}
+/* unit */
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.facts div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+.facts b{display:block;font-size:16px}.facts span{font-size:11px;color:var(--mute)}
+.price{font-size:26px;font-weight:700}
+.st{font-size:11px;border-radius:20px;padding:2px 9px;border:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:16px 0 10px;overflow-x:auto}
+.tabs button{padding:9px 10px;font-size:13px;color:var(--mute);border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--ink);border-color:var(--on);font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);cursor:pointer}
+.scroll{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+tr.dim td{opacity:.3}
+/* walk */
+.stage{position:relative;height:62vh;min-height:360px}
+.stage .ph{position:absolute;inset:0}
+.hud{position:absolute;z-index:2}
+.hud.tl{top:10px;left:10px}.hud.tr{top:10px;right:10px}.hud.bl{bottom:12px;left:12px}.hud.br{bottom:12px;right:12px}.hud.bc{bottom:14px;left:50%;transform:translateX(-50%)}
+.stick{width:74px;height:74px;border-radius:50%;border:2px dashed var(--ink);display:flex;align-items:center;justify-content:center;font-size:10px;background:rgba(255,255,255,.35)}
+.mini{width:104px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px;display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.mini span{font-size:9px;background:var(--ph);border-radius:3px;padding:6px 2px;text-align:center}
+.mini span.on{background:var(--on);color:var(--bg)}
+/* nav */
+nav.bot{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+nav.bot a{flex:1;text-align:center;text-decoration:none;font-size:11px;color:var(--mute);padding:6px 2px;border-radius:8px}
+nav.bot a b{display:block;font-size:17px;font-weight:400;line-height:1.1}
+nav.bot a.on{color:var(--ink);font-weight:700}
+/* sheet */
+.veil{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:none;align-items:flex-end;justify-content:center}
+.veil.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));max-height:86vh;overflow:auto}
+.sheet h2{display:flex;align-items:center}
+label.f{display:block;font-size:12px;color:var(--mute);margin:12px 0 6px}
+input[type=range]{width:100%}
+input[type=text]{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font:inherit;background:var(--bg);color:var(--ink)}
+.agent{border:1px dashed var(--on)}
+.heat .u{color:var(--ink)}
+@media(min-width:860px){
+  main{padding:22px 22px 40px}
+  nav.bot{position:static;border:0;background:none;padding:0;gap:4px}
+  nav.bot a{flex:none;padding:6px 10px;font-size:13px}nav.bot a b{display:none}
+  .two{display:grid;grid-template-columns:1.15fr 1fr;gap:22px;align-items:start}
+  .veil{align-items:center}.sheet{border-radius:16px}
+  h1{font-size:34px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="hrow">
+    <a class="logo" href="#/" style="text-decoration:none">ECLIPSE</a>
+    <span class="tag">концепт</span>
+    <span class="sp"></span>
+    <nav class="bot" id="nav"></nav>
+    <span class="lang"><button>EN</button><button>ES</button><button class="on">RU</button></span>
+    <button class="ecl" id="ecl" title="День / ночь" aria-label="День или ночь"><i></i><b></b></button>
+  </div>
+  <div class="crumbs" id="crumbs"></div>
+</header>
+<main id="main"></main>
+</div>
+<div class="veil" id="veil"><div class="sheet" id="sheet"></div></div>
+
+<script>
+/* УСЛОВНЫЕ ДАННЫЕ. Настоящие квартиры, площади и цены появятся на этапе 3. */
+const TYPES={G:{n:"С садом",bed:3,bath:3,a:185,t:90},T2:{n:"2 спальни",bed:2,bath:2,a:120,t:32},T3:{n:"3 спальни",bed:3,bath:3,a:170,t:45},T4:{n:"4 спальни",bed:4,bath:4,a:230,t:70},PH:{n:"Пентхаус",bed:4,bath:5,a:320,t:210}};
+const LAY={1:["G","G","G","G"],2:["T3","T2","T2","T2","T2","T3"],3:["T3","T2","T2","T2","T2","T3"],4:["T4","T3","T3","T4"],5:["PH","PH"]};
+const VIEW={1:"Сад",2:"Сад, частично море",3:"Море",4:"Море",5:"Панорама: море и горы"};
+const HEIGHT={1:1,2:5,3:8,4:11,5:15};
+const STS=["free","free","res","free","sold","free","free","free","res","free","free","sold","free","free","free","free","res","free","free","free","free","free"];
+const STN={free:"Свободна",res:"Бронь",sold:"Продана"};
+const FLN=f=>f==5?"Пентхаус":f+" этаж";
+const UNITS=[];let k=0;
+for(const f of [1,2,3,4,5]) LAY[f].forEach((t,i)=>{const T=TYPES[t];const id=f==5?"PH"+(i+1):f+"ABCDEF"[i];
+  const side=i==0?"Юго-запад":i==LAY[f].length-1?"Юго-восток":"Юг";
+  const price=Math.round(T.a*(9000+f*1400)*(t=="PH"?1.25:1)/10000)*10000;
+  UNITS.push({id,f,t,side,price,st:STS[k],views:[41,28,63,35,12,77,52,30,58,44,91,20,66,49,38,72,85,60,47,55,120,104][k]});k++;});
+const PLACES={
+ "Школы":[["Международная школа А",14,5],["Международная школа Б",null,9],["Детский сад",8,3]],
+ "Магазины":[["Супермаркет",6,2],["Гастроном",11,4],["Торговая галерея",null,7]],
+ "Рестораны":[["Ресторан у пляжа",9,3],["Ресторан при отеле",7,3],["Кафе на бульваре",4,2]],
+ "Пляж":[["Ближайший пляж",8,3],["Пляжный клуб",12,4]],
+ "Здоровье":[["Клиника",null,6],["Аптека",5,2]],
+ "Спорт":[["Теннис и падел",10,4],["Гольф-клуб",null,10]],
+ "Дорога":[["Центр Марбельи",null,7],["Пуэрто-Банус",null,8],["Аэропорт Малаги",null,40]]};
+function load(k){try{return JSON.parse(localStorage[k]||"[]")}catch(e){return[]}}
+const S={beds:0,max:0,sea:false,free:false,fav:load("eclFav"),cmp:load("eclCmp"),cat:"Школы",walk:false,sort:"id",dir:1,tab:"Планировка",room:"Гостиная",pal:"Светлая",time:"Закат",place:0};
+const $=s=>document.querySelector(s), main=$("#main");
+const eur=n=>new Intl.NumberFormat("ru-RU").format(n)+" €";
+const U=id=>UNITS.find(u=>u.id==id);
+const pass=u=>(!S.beds||TYPES[u.t].bed>=S.beds)&&(!S.max||u.price<=S.max)&&(!S.sea||u.f>=3)&&(!S.free||u.st=="free");
+const active=()=>S.beds||S.max||S.sea||S.free;
+const agent=()=>{const m=location.hash.match(/[?&]agent=([^&]+)/);return m?decodeURIComponent(m[1]):null};
+const q=()=>agent()?"?agent="+encodeURIComponent(agent()):"";
+const save=()=>{try{localStorage.eclFav=JSON.stringify(S.fav);localStorage.eclCmp=JSON.stringify(S.cmp)}catch(e){}};
+const ph=(t,h)=>`<div class="ph" style="height:${h}"><small>${t}</small></div>`;
+const cell=(u,big)=>`<button class="u ${u.st=="sold"?"sold":u.st=="res"?"res":""} ${active()?(pass(u)?"hit":"dim"):""}" onclick="go('#/unit/${u.id}')"><b>${u.id}</b>${big?`<span>${TYPES[u.t].bed} сп · ${TYPES[u.t].a} м²</span><span>${STN[u.st]}</span>`:""}</button>`;
+function go(h){location.hash=h+(h.includes("?")?"":q())}
+function nav(cur){const it=[["#/area","◎","Район"],["#/building","▦","Дом"],["#/list","≡","Список"],["#/fav","♡","Избранное"+(S.fav.length?" "+S.fav.length:"")],["#/more","⋯","Ещё"]];
+  $("#nav").innerHTML=it.map(([h,i,t])=>`<a href="${h+q()}" class="${cur==h?"on":""}"><b>${i}</b>${t}</a>`).join("")}
+function crumbs(a){$("#crumbs").innerHTML=a.map(([t,h],i)=>i==a.length-1?`<span class="cur">${t}</span>`:`<a href="${h+q()}">${t}</a>`).join(" › ")}
+const fbar=()=>`<div class="row" style="margin:10px 0"><button class="btn sm ${active()?"on":""}" onclick="filter()">Фильтр${active()?" ✓":""}</button><span class="btn sm" style="border:0;background:none">подходит ${UNITS.filter(pass).length} из 22</span></div>`;
+
+const R={
+"":()=>{crumbs([["Вход"]]);nav("");main.innerHTML=`<div class="two"><div>${ph("Главный кадр здания · "+(document.body.classList.contains("night")?"ночь":"день"),"46vh")}</div><div>
+  <h1 style="margin-top:14px">Eclipse</h1><p class="lead">22 резиденции на Золотой миле, Марбелья. Четыре этажа и пентхаус.</p>
+  <div class="grid3"><div class="card stat"><b>22</b><span>квартиры</span></div><div class="card stat"><b>4 + 1</b><span>этажа и пентхаус</span></div><div class="card stat"><b>8 мин</b><span>пешком до пляжа</span></div></div>
+  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">Смотреть дом</button></div>
+  <div class="row fill" style="margin-top:8px"><button class="btn" onclick="go('#/area')">Район</button><button class="btn" onclick="film()">▶ Фильм</button></div>
+  <p class="note">Концепт. Дом выдуман, данные условные.</p></div></div>`},
+"area":()=>{crumbs([["Район"]]);nav("#/area");const L=PLACES[S.cat];
+  main.innerHTML=`<h2>Район: Золотая миля</h2><div class="two"><div>${ph("Карта: дом и места категории «"+S.cat+"»<br>выбрано: "+L[S.place][0],"38vh")}</div><div>
+  <div class="chips" style="margin-top:10px">${Object.keys(PLACES).map(c=>`<button class="btn sm ${c==S.cat?"on":""}" onclick="S.cat='${c}';S.place=0;draw()">${c}</button>`).join("")}</div>
+  <div class="row" style="margin:10px 0"><button class="btn sm ${!S.walk?"on":""}" onclick="S.walk=false;draw()">На машине</button><button class="btn sm ${S.walk?"on":""}" onclick="S.walk=true;draw()">Пешком</button></div>
+  <div class="list">${L.map((p,i)=>`<button class="li ${i==S.place?"on":""}" onclick="S.place=${i};draw()"><span class="t">${p[0]}</span><b>${S.walk?(p[1]?p[1]+" мин":"далеко"):p[2]+" мин"}</b></button>`).join("")}</div>
+  <p class="note">Места и минуты условные. Настоящие появятся на этапе 2, с источником для каждого.</p>
+  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">Смотреть дом</button></div></div></div>`},
+"building":()=>{crumbs([["Район","#/area"],["Дом"]]);nav("#/building");
+  main.innerHTML=`<h2>Дом</h2><p class="lead">Нажмите на этаж или сразу на квартиру.</p>${fbar()}
+  <div class="card"><div class="ph" style="height:auto;padding:16px 10px;display:block"><small style="display:inline-block;margin-bottom:10px">Здесь будет здание в 3D, его можно повернуть</small>
+  <div class="bld">${[5,4,3,2,1].map(f=>`<div class="fl ${f==5?"ph4":f==4?"f4":""}"><button class="lab" onclick="go('#/floor/${f}')">${f==5?"ПХ":f+" эт"} ›</button><div class="us">${UNITS.filter(u=>u.f==f).map(u=>cell(u)).join("")}</div></div>`).join("")}</div></div>
+  <div class="legend"><span><i style="background:var(--ph)"></i>свободна</span><span><i style="background:var(--ph2)"></i>бронь</span><span><i style="border-style:dashed"></i>продана</span><span><i style="border:2px solid var(--on)"></i>подходит под фильтр</span></div></div>
+  <div class="row fill" style="margin-top:12px"><button class="btn" onclick="go('#/list')">Показать списком</button></div>`},
+"floor":f=>{f=+f||1;crumbs([["Район","#/area"],["Дом","#/building"],[FLN(f)]]);nav("#/building");const us=UNITS.filter(u=>u.f==f);
+  main.innerHTML=`<h2>${FLN(f)}</h2><div class="chips">${[1,2,3,4,5].map(x=>`<button class="btn sm ${x==f?"on":""}" onclick="go('#/floor/${x}')">${x==5?"Пентхаус":x}</button>`).join("")}</div>${fbar()}
+  <div class="card"><div style="font-size:12px;color:var(--mute);margin-bottom:8px">↑ север · горы</div>
+  <div class="plan" style="grid-template-columns:repeat(${Math.min(us.length,3)},1fr)">${us.map(u=>cell(u,true)).join("")}</div>
+  <div style="font-size:12px;color:var(--mute);margin-top:8px">↓ юг · море · вид с этажа: ${VIEW[f]}</div></div>
+  <p class="note">Здесь будет настоящий план этажа с контурами квартир.</p>`},
+"unit":id=>{const u=U(id);if(!u)return go("#/building");const T=TYPES[u.t],a=agent();crumbs([["Район","#/area"],["Дом","#/building"],[FLN(u.f),"#/floor/"+u.f],["Квартира "+u.id]]);nav("#/building");
+  const fav=S.fav.includes(u.id),cmp=S.cmp.includes(u.id);
+  const tabs={"Планировка":ph("План квартиры с размерами комнат","240px"),
+   "Платежи":`<table><tr><td>Бронь</td><td>20 000 €</td></tr><tr><td>Договор, 30%</td><td>${eur(u.price*.3)}</td></tr><tr><td>В ходе стройки, 20%</td><td>${eur(u.price*.2)}</td></tr><tr><td>При сдаче, 50%</td><td>${eur(u.price*.5)}</td></tr></table>`,
+   "Расходы":`<table><tr><td>Платежи комплекса</td><td>${eur(Math.round(T.a*3.2))} в месяц</td></tr><tr><td>Налог на недвижимость</td><td>${eur(Math.round(u.price*.0006))} в месяц</td></tr></table>`,
+   "В цену входит":`<div class="list"><div class="li">Кухня с техникой</div><div class="li">Два места в паркинге</div><div class="li">Кладовая</div></div>`};
+  main.innerHTML=`<div class="two"><div><div class="row" style="align-items:center"><h1>Квартира ${u.id}</h1><span class="st">${STN[u.st]}</span></div>
+  <p class="lead">${u.f==5?T.n:T.n+" · "+FLN(u.f)} · ${u.side} · ${VIEW[u.f]}</p>
+  <div class="facts"><div><b>${T.bed}</b><span>спальни</span></div><div><b>${T.bath}</b><span>ванные</span></div><div><b>${T.a}</b><span>м²</span></div><div><b>${T.t}</b><span>м² терраса</span></div></div>
+  <div class="price">${eur(u.price)}</div>
+  <div class="row fill" style="margin-top:12px"><button class="btn pri" onclick="go('#/walk/${u.id}')">Войти в квартиру</button><button class="btn" onclick="go('#/terrace/${u.id}')">Вид с террасы</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn sm ${fav?"on":""}" onclick="tog('fav','${u.id}')">${fav?"♥ В избранном":"♡ В избранное"}</button><button class="btn sm ${cmp?"on":""}" onclick="tog('cmp','${u.id}')">${cmp?"✓ В сравнении":"Сравнить"}</button><button class="btn sm" onclick="share('${u.id}')">Поделиться</button><button class="btn sm" onclick="alert('Здесь скачается PDF квартиры ${u.id}')">PDF</button></div>
+  <div class="card ${a?"agent":""}" style="margin-top:12px"><div style="font-size:12px;color:var(--mute)">${a?"Ваш агент":"Отдел продаж Eclipse"}</div><b>${a||"Имя менеджера"}</b>
+  <div class="row fill" style="margin-top:8px"><button class="btn sm" onclick="go('#/contact/${u.id}')">WhatsApp</button><button class="btn sm" onclick="go('#/contact/${u.id}')">Записаться на показ</button></div></div></div>
+  <div><div class="tabs">${Object.keys(tabs).map(t=>`<button class="${t==S.tab?"on":""}" onclick="S.tab='${t}';draw()">${t}</button>`).join("")}</div>${tabs[S.tab]}<p class="note">Концепт. Цифры условные.</p></div></div>`},
+"walk":id=>{const u=U(id);if(!u)return go("#/building");crumbs([["Дом","#/building"],[FLN(u.f),"#/floor/"+u.f],["Квартира "+u.id,"#/unit/"+u.id],["Прогулка"]]);nav("#/building");
+  const rooms=["Прихожая","Гостиная","Кухня","Спальня 1","Спальня 2","Ванная","Гардероб","Терраса"].slice(0,TYPES[u.t].bed>2?8:8);
+  main.innerHTML=`<div class="stage"><div class="ph"><small>Вид от первого лица · ${S.room} · отделка: ${S.pal.toLowerCase()} · ${document.body.classList.contains("night")?"ночь":"день"}</small></div>
+  <div class="hud tl"><div class="mini">${rooms.slice(0,6).map(r=>`<span class="${r==S.room?"on":""}">${r}</span>`).join("")}</div></div>
+  <div class="hud tr"><button class="btn sm" onclick="go('#/unit/${u.id}')">✕ Выйти</button></div>
+  <div class="hud bl"><div class="stick">идти</div></div><div class="hud br"><div class="stick">смотреть</div></div>
+  <div class="hud bc"><button class="btn sm pri" onclick="${S.room=="Гостиная"?`go('#/terrace/${u.id}')`:`alert('Дверь открывается')`}">${S.room=="Гостиная"?"Открыть дверь на террасу":"Открыть дверь"}</button></div></div>
+  <h3>Перейти в комнату</h3><div class="chips">${rooms.map(r=>`<button class="btn sm ${r==S.room?"on":""}" onclick="${r=="Терраса"?`go('#/terrace/${u.id}')`:`S.room='${r}';draw()`}">${r}</button>`).join("")}</div>
+  <h3>Отделка</h3><div class="row">${["Светлая","Тёмная"].map(p=>`<button class="btn sm ${p==S.pal?"on":""}" onclick="S.pal='${p}';draw()">${p}</button>`).join("")}</div>
+  <p class="note">На телефоне: левый палец идёт, правый поворачивает взгляд. На компьютере: клавиши и мышь.</p>`},
+"terrace":id=>{const u=U(id);if(!u)return go("#/building");crumbs([["Дом","#/building"],["Квартира "+u.id,"#/unit/"+u.id],["Терраса"]]);nav("#/building");
+  main.innerHTML=`<div class="stage"><div class="ph"><small>Вид с террасы · ${VIEW[u.f]} · ${S.time.toLowerCase()}</small></div>
+  <div class="hud tl"><span class="btn sm">⬆ ${u.side}</span></div><div class="hud tr"><button class="btn sm" onclick="go('#/unit/${u.id}')">✕ Выйти</button></div>
+  <div class="hud bc"><button class="btn sm" onclick="alert('На виде появятся подписи: море, гора, город')">Подписи на виде</button></div></div>
+  <p class="lead" style="margin-top:10px">${FLN(u.f)} · высота около ${HEIGHT[u.f]} м · ${u.side}</p>
+  <h3>Время</h3><div class="row">${["Утро","Закат","Ночь"].map(t=>`<button class="btn sm ${t==S.time?"on":""}" onclick="setTime('${t}')">${t}</button>`).join("")}</div>
+  <div class="row fill" style="margin-top:14px"><button class="btn" onclick="go('#/walk/${u.id}')">Вернуться в квартиру</button><button class="btn pri" onclick="go('#/contact/${u.id}')">Записаться на показ</button></div>
+  <p class="note">Вид строится по реальной местности для высоты этого этажа.</p>`},
+"list":()=>{crumbs([["Дом","#/building"],["Список"]]);nav("#/list");const cols=[["id","№"],["f","Этаж"],["bed","Спальни"],["a","м²"],["t","Терраса"],["view","Вид"],["price","Цена"],["st","Статус"]];
+  const val=(u,c)=>c=="bed"?TYPES[u.t].bed:c=="a"?TYPES[u.t].a:c=="t"?TYPES[u.t].t:c=="view"?VIEW[u.f]:u[c];
+  const rows=[...UNITS].sort((a,b)=>(val(a,S.sort)>val(b,S.sort)?1:val(a,S.sort)<val(b,S.sort)?-1:0)*S.dir);
+  main.innerHTML=`<h2>Все квартиры</h2>${fbar()}<div class="scroll"><table><tr>${cols.map(([c,n])=>`<th onclick="S.dir=S.sort=='${c}'?-S.dir:1;S.sort='${c}';draw()">${n}${S.sort==c?(S.dir>0?" ↑":" ↓"):""}</th>`).join("")}</tr>
+  ${rows.map(u=>`<tr class="${active()&&!pass(u)?"dim":""}" onclick="go('#/unit/${u.id}')" style="cursor:pointer"><td><b>${u.id}</b></td><td>${u.f==5?"ПХ":u.f}</td><td>${TYPES[u.t].bed}</td><td>${TYPES[u.t].a}</td><td>${TYPES[u.t].t}</td><td>${VIEW[u.f]}</td><td>${eur(u.price)}</td><td>${STN[u.st]}</td></tr>`).join("")}</table></div>
+  <p class="note">Нажмите на заголовок столбца, чтобы отсортировать. Нажмите на строку, чтобы открыть квартиру.</p>`},
+"fav":()=>{crumbs([["Избранное"]]);nav("#/fav");const f=S.fav.map(U),c=S.cmp.map(U);
+  main.innerHTML=`<h2>Избранное</h2>${f.length?`<div class="list">${f.map(u=>`<button class="li" onclick="go('#/unit/${u.id}')"><span class="t"><b>${u.id}</b> · ${TYPES[u.t].n}<div class="m">${FLN(u.f)} · ${VIEW[u.f]}</div></span><b>${eur(u.price)}</b></button>`).join("")}</div>`:`<p class="lead">Пока пусто. Откройте квартиру и нажмите «В избранное».</p>`}
+  <h3>Сравнение</h3>${c.length?`<div class="scroll"><table><tr><th></th>${c.map(u=>`<th>${u.id}</th>`).join("")}</tr>${[["Этаж",u=>FLN(u.f)],["Спальни",u=>TYPES[u.t].bed],["Площадь",u=>TYPES[u.t].a+" м²"],["Терраса",u=>TYPES[u.t].t+" м²"],["Вид",u=>VIEW[u.f]],["Цена",u=>eur(u.price)],["Статус",u=>STN[u.st]]].map(([n,fn])=>`<tr><td>${n}</td>${c.map(u=>`<td>${fn(u)}</td>`).join("")}</tr>`).join("")}</table></div>`:`<p class="lead">Добавьте до трёх квартир кнопкой «Сравнить».</p>`}
+  ${f.length||c.length?`<div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="alert('Подборка отправляется одной ссылкой')">Отправить подборку</button></div>`:`<div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">Выбрать квартиру</button></div>`}`},
+"more":()=>{crumbs([["Ещё"]]);nav("#/more");main.innerHTML=`<h2>Ещё</h2><div class="list"><button class="li" onclick="film()"><span class="t">▶ Фильм о доме</span></button><button class="li" onclick="go('#/contact')"><span class="t">Связаться</span></button><button class="li" onclick="go('#/dev')"><span class="t">Для девелопера<div class="m">Карта спроса, ссылка агента, PDF</div></span></button></div>`},
+"dev":()=>{crumbs([["Ещё","#/more"],["Для девелопера"]]);nav("#/more");const mx=Math.max(...UNITS.map(u=>u.views));
+  main.innerHTML=`<h2>Для девелопера</h2><p class="lead">Что вы видите, пока покупатели смотрят дом.</p>
+  <h3>Карта спроса: просмотры за 30 дней</h3><div class="card heat"><div class="bld">${[5,4,3,2,1].map(f=>`<div class="fl ${f==5?"ph4":f==4?"f4":""}"><span class="lab">${f==5?"ПХ":f+" эт"}</span><div class="us">${UNITS.filter(u=>u.f==f).map(u=>`<button class="u" style="background:rgba(120,120,120,${(.12+.8*u.views/mx).toFixed(2)})" onclick="go('#/unit/${u.id}')"><b>${u.id}</b><span>${u.views}</span></button>`).join("")}</div></div>`).join("")}</div></div>
+  <h3>Интерес по квартирам</h3><div class="scroll"><table><tr><th>№</th><th>Просмотры</th><th>В избранном</th><th>Сравнения</th><th>Ссылки</th></tr>${[...UNITS].sort((a,b)=>b.views-a.views).slice(0,6).map(u=>`<tr><td><b>${u.id}</b></td><td>${u.views}</td><td>${Math.round(u.views/6)}</td><td>${Math.round(u.views/9)}</td><td>${Math.round(u.views/14)}</td></tr>`).join("")}</table></div>
+  <h3>Ссылка агента</h3><div class="card"><label class="f" style="margin-top:0">Имя и телефон агента</label><input type="text" id="ag" placeholder="Например: Анна, +34 600 000 000"><div class="row fill" style="margin-top:8px"><button class="btn" onclick="const v=$('#ag').value.trim();if(v)location.hash='#/unit/3B?agent='+encodeURIComponent(v)">Открыть квартиру 3B с контактами агента</button></div></div>
+  <p class="note">Демонстрационные данные.</p>`},
+"contact":id=>{crumbs([["Связаться"]]);nav("#/more");const a=agent();main.innerHTML=`<h2>Связаться</h2>${id&&U(id)?`<p class="lead">Квартира ${id} уже указана в заявке.</p>`:""}<div class="card ${a?"agent":""}"><div style="font-size:12px;color:var(--mute)">${a?"Ваш агент":"Отдел продаж Eclipse"}</div><b>${a||"Имя менеджера"}</b></div>
+  <div class="row fill" style="margin-top:12px"><button class="btn pri" onclick="alert('Открывается WhatsApp с готовым сообщением')">Написать в WhatsApp</button></div>
+  <h3>Или запись на видеопоказ</h3><label class="f">Имя</label><input type="text"><label class="f">Телефон или почта</label><input type="text"><label class="f">Удобное время</label><input type="text">
+  <div class="row fill" style="margin-top:12px"><button class="btn" onclick="alert('Макет: заявка не отправляется')">Отправить</button></div>`}
+};
+function tog(k,id){const a=S[k],i=a.indexOf(id);if(i>=0)a.splice(i,1);else{if(k=="cmp"&&a.length>=3)return alert("В сравнении не больше трёх квартир");a.push(id)}save();draw()}
+function share(id){const url=location.href.split("#")[0]+"#/unit/"+id+q();(navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>alert("Ссылка на квартиру "+id+" скопирована"),()=>alert(url))}
+function setTime(t){S.time=t;document.body.classList.toggle("night",t=="Ночь");draw()}
+function sheet(h){$("#sheet").innerHTML=h;$("#veil").classList.add("on")}
+function closeSheet(){$("#veil").classList.remove("on")}
+function film(){sheet(`<h2>Фильм<span class="sp"></span><button class="btn sm" onclick="closeSheet()">✕</button></h2>${ph("Фильм о доме: день переходит в ночь через затмение","220px")}`)}
+function filter(){sheet(`<h2>Фильтр<span class="sp"></span><button class="btn sm" onclick="closeSheet()">✕</button></h2>
+  <label class="f">Спальни, не меньше</label><div class="row">${[0,2,3,4].map(n=>`<button class="btn sm ${S.beds==n?"on":""}" onclick="S.beds=${n};filter();draw()">${n||"Любые"}</button>`).join("")}</div>
+  <label class="f">Бюджет до: <b>${S.max?eur(S.max):"не важно"}</b></label><input type="range" min="0" max="6000000" step="250000" value="${S.max}" oninput="S.max=+this.value;this.previousElementSibling.querySelector('b').textContent=S.max?eur(S.max):'не важно';draw();cnt()">
+  <label class="f">Дополнительно</label><div class="row"><button class="btn sm ${S.sea?"on":""}" onclick="S.sea=!S.sea;filter();draw()">Вид на море</button><button class="btn sm ${S.free?"on":""}" onclick="S.free=!S.free;filter();draw()">Только свободные</button></div>
+  <div class="row fill" style="margin-top:16px"><button class="btn" onclick="S.beds=0;S.max=0;S.sea=S.free=false;filter();draw()">Сбросить</button><button class="btn pri" id="cnt" onclick="closeSheet()">Показать ${UNITS.filter(pass).length}</button></div>`)}
+function cnt(){const b=$("#cnt");if(b)b.textContent="Показать "+UNITS.filter(pass).length}
+function draw(){const h=location.hash.replace(/^#\/?/,"").split("?")[0].split("/");(R[h[0]]||R[""])(h[1])}
+$("#ecl").onclick=()=>{const n=!document.body.classList.contains("night");document.body.classList.toggle("night",n);S.time=n?"Ночь":"Закат";draw()};
+$("#veil").onclick=e=>{if(e.target.id=="veil")closeSheet()};
+addEventListener("hashchange",()=>{closeSheet();draw();scrollTo(0,0)});
+draw();
+</script>
+</body>
+</html>
