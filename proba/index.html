@@ -233,12 +233,51 @@ function setTime(k) {
   hemi.intensity = t.hemi; scene.environmentIntensity = t.env; renderer.toneMappingExposure = t.exp; scene.fog.color.set(t.fog);
   lamps.forEach(l => l.intensity = t.lamp);
   const night = k === 'night';
+  if (typeof liveView === 'function') liveView(k);
   if (bldMat) { bldMat.emissive.set(night ? 0xffc27a : 0x000000); bldMat.emissiveIntensity = night ? .22 : 0; }
   if (seaMat) seaMat.color.set(night ? 0x0b1a2a : k === 'sunset' ? 0x4f7f9a : 0x2f7ea3);
   document.querySelectorAll('#time button').forEach(b => b.classList.toggle('on', b.dataset.t === k));
 }
 
 /* ---------- местность: рельеф и здания из открытых данных ---------- */
+
+/* ---------- живой вид за террасой ----------
+   Вместо серой местности на юге показывается живой ролик вида с террасы (тот же, что на сайте).
+   Ролик снят из точки (4.5, -2.75) на высоте глаз, взгляд на юг с наклоном -3°, вертикальный угол 64°.
+   Он натянут на далёкий экран ровно под этот угол, по бокам стоят его зеркальные копии, чтобы вид не обрывался.
+   Серая местность южнее фасада отсечена; на севере (окна на Ла-Кончу) она остаётся. */
+renderer.localClippingEnabled = true;
+const southCut = [new THREE.Plane(new THREE.Vector3(0, 0, -1), -1.5)];
+const liveVid = document.createElement('video');
+Object.assign(liveVid, { muted: true, loop: true, playsInline: true, preload: 'auto' }); liveVid.setAttribute('playsinline', ''); liveVid.setAttribute('muted', '');
+const liveTex = new THREE.VideoTexture(liveVid); liveTex.colorSpace = THREE.SRGBColorSpace;
+{
+  const R = 900, vf = 64 * Math.PI / 180, vh = 2 * R * Math.tan(vf / 2), vw = vh * 16 / 9, half = Math.atan(Math.tan(vf / 2) * 16 / 9);
+  const eye = new THREE.Group(); eye.position.copy(P(4.5, -2.75, EYE)); scene.add(eye);
+  /* экран непрозрачный: иначе его не видно сквозь стекло дверей (стекло рисуется отдельным проходом) */
+  const m = new THREE.MeshBasicMaterial({ map: liveTex, toneMapped: false, fog: false, side: THREE.DoubleSide });
+  /* наклон общий для всех трёх частей, чтобы их края сходились без щели */
+  const tilt = new THREE.Group(); tilt.rotation.x = 3 * Math.PI / 180; eye.add(tilt);
+  for (const k of [-1, 0, 1]) {
+    const yawG = new THREE.Group(); yawG.rotation.y = k * 2 * half; tilt.add(yawG);
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(vw, vh), m); scr.position.z = R; scr.rotation.y = Math.PI; if (k) scr.scale.x = -1; yawG.add(scr);
+  }
+  /* земля под нижним краем экрана: видна, только если смотреть с края террасы круто вниз */
+  const gndM = new THREE.MeshBasicMaterial({ color: 0x55663a, fog: false, toneMapped: false });
+  const gnd = new THREE.Mesh(new THREE.CircleGeometry(2600, 48), gndM);
+  gnd.rotation.x = -Math.PI / 2; gnd.position.y = -R * Math.tan(vf / 2 + 3 * Math.PI / 180) + 6; eye.add(gnd);
+  /* небо над верхним краем экрана: южная половина купола в цвет верхней кромки ролика, чтобы на стыках частей не было выреза */
+  const domeM = new THREE.MeshBasicMaterial({ color: 0x9db7d8, fog: false, toneMapped: false, side: THREE.BackSide });
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(R * 1.6, 32, 16, 0, Math.PI), domeM); eye.add(dome);
+  /* цвета неба и земли берутся из самого ролика раз в секунду */
+  const pc = document.createElement('canvas'); pc.width = 16; pc.height = 9; const px = pc.getContext('2d', { willReadFrequently: true });
+  setInterval(() => { if (liveVid.readyState < 2) return; try { px.drawImage(liveVid, 0, 0, 16, 9);
+    const a = px.getImageData(8, 0, 1, 1).data, b = px.getImageData(8, 8, 1, 1).data;
+    domeM.color.setRGB(a[0] / 255, a[1] / 255, a[2] / 255, THREE.SRGBColorSpace); gndM.color.setRGB(b[0] / 255, b[1] / 255, b[2] / 255, THREE.SRGBColorSpace); } catch (e) {} }, 1000);
+}
+function liveView(k) { const src = '../vid/v/' + k + '.mp4'; if (liveVid.getAttribute('src') !== src) { liveVid.src = src; } liveVid.play().catch(() => {}); }
+addEventListener('pointerdown', () => liveVid.play().catch(() => {}), { passive: true });
+
 async function loadSite() {
   const d = await (await fetch('mestnost.json')).json(), { step, u0, v0, nu, nv, h } = d, lvl = UNIT.level;
   const pos = new Float32Array(nu * nv * 3), col = new Float32Array(nu * nv * 3), idx = [];
@@ -250,15 +289,15 @@ async function loadSite() {
   }
   for (let j = 0; j < nv - 1; j++) for (let i = 0; i < nu - 1; i++) { const a = j * nu + i, b = a + 1, cc = a + nu, dd = cc + 1; idx.push(a, b, cc, b, dd, cc); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
-  landMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }); const land = new THREE.Mesh(g, landMat); land.receiveShadow = false; scene.add(land);
-  seaMat = new THREE.MeshStandardMaterial({ color: 0x4f7f9a, roughness: .18, metalness: .1 });
+  landMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, clippingPlanes: southCut }); const land = new THREE.Mesh(g, landMat); land.receiveShadow = false; scene.add(land);
+  seaMat = new THREE.MeshStandardMaterial({ color: 0x4f7f9a, roughness: .18, metalness: .1, clippingPlanes: southCut });
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(40000, 40000), seaMat); sea.rotation.x = -Math.PI / 2; sea.position.y = 0.15 - lvl; scene.add(sea);
   const gs = [];
   for (const [z, fl, r] of d.buildings) {
     const s = new THREE.Shape(); for (let i = 0; i < r.length; i += 2) i ? s.lineTo(r[i] - UNIT.x0, r[i + 1]) : s.moveTo(r[i] - UNIT.x0, r[i + 1]);
     const e = new THREE.ExtrudeGeometry(s, { depth: fl * 3.1 + 2.5, bevelEnabled: false }); e.rotateX(-Math.PI / 2); e.translate(0, z - 2 - lvl, 0); gs.push(e);
   }
-  bldMat = new THREE.MeshStandardMaterial({ color: 0xece5d6, roughness: .9 });
+  bldMat = new THREE.MeshStandardMaterial({ color: 0xece5d6, roughness: .9, clippingPlanes: southCut });
   scene.add(new THREE.Mesh(mergeGeometries(gs), bldMat));
 }
 
