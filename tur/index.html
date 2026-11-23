@@ -31,21 +31,29 @@
 <body>
 <div class="stage">
   <div class="frame">
-    <img id="still" class="on" src="img/hub.jpg" alt="Гостиная квартиры 3C">
+    <img id="still" class="on" src="img/hub.jpg" alt="">
     <video id="clip" playsinline muted preload="auto"></video>
     <div class="shade"></div>
-    <div class="top"><a class="brand" href="../index.html#/unit/3C" aria-label="Назад к квартире 3C">← ECLIPSE</a><span class="where" id="where">Квартира 3C · Гостиная</span></div>
+    <div class="top"><a class="brand" id="home" href="../index.html#/unit/3C">← ECLIPSE</a><span class="where" id="where"></span></div>
     <div class="bar" id="bar"></div>
   </div>
 </div>
 <script>
-const ROOMS = [
-  { id: 'terrasa', name: 'Терраса' },
-  { id: 'kuhnya', name: 'Кухня' },
-  { id: 'spalnya1', name: 'Спальня 1' },
-  { id: 'spalnya2', name: 'Спальня 2' },
-  { id: 'vannaya1', name: 'Ванная' }
-];
+/* языки: тот же выбор, что на основном сайте (ссылка ?lang= или память браузера) */
+const T = {
+  ru: { title: 'Eclipse — тур по квартире 3C', apt: 'Квартира 3C', hub: 'Гостиная', back: '← В гостиную', home: 'Назад к квартире 3C',
+        terrasa: 'Терраса', kuhnya: 'Кухня', spalnya1: 'Спальня 1', spalnya2: 'Спальня 2', vannaya1: 'Ванная' },
+  en: { title: 'Eclipse — tour of apartment 3C', apt: 'Apartment 3C', hub: 'Living room', back: '← Living room', home: 'Back to apartment 3C',
+        terrasa: 'Terrace', kuhnya: 'Kitchen', spalnya1: 'Bedroom 1', spalnya2: 'Bedroom 2', vannaya1: 'Bathroom' },
+  es: { title: 'Eclipse — recorrido por el apartamento 3C', apt: 'Apartamento 3C', hub: 'Salón', back: '← Salón', home: 'Volver al apartamento 3C',
+        terrasa: 'Terraza', kuhnya: 'Cocina', spalnya1: 'Dormitorio 1', spalnya2: 'Dormitorio 2', vannaya1: 'Baño' }
+};
+function pickLang() { const m = location.search.match(/[?&]lang=(ru|en|es)/); if (m) return m[1];
+  try { if (T[localStorage.eclLang]) return localStorage.eclLang; } catch (e) {}
+  const n = (navigator.language || 'en').slice(0, 2).toLowerCase(); return T[n] ? n : 'en'; }
+const LANG = pickLang(), L = T[LANG];
+document.documentElement.lang = LANG; document.title = L.title;
+const ROOMS = ['terrasa', 'kuhnya', 'spalnya1', 'spalnya2', 'vannaya1'].map(id => ({ id, name: L[id] }));
 const still = document.getElementById('still'), clip = document.getElementById('clip'),
   bar = document.getElementById('bar'), where = document.getElementById('where');
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -62,12 +70,12 @@ function buttons(list) {
 function setStill(src) { return new Promise(res => { const i = new Image(); i.onload = i.onerror = () => { still.src = src; res(); }; i.src = src; }); }
 
 function hub() {
-  where.textContent = 'Квартира 3C · Гостиная';
+  where.textContent = L.apt + ' · ' + L.hub;
   buttons(ROOMS.map(r => ({ label: r.name, go: () => enter(r) })));
 }
 async function enter(r) {
   if (busy) return; busy = true; bar.classList.add('off');
-  where.textContent = 'Квартира 3C · ' + r.name;
+  where.textContent = L.apt + ' · ' + r.name;
   /* 1. мягко меняем кадр гостиной на первый кадр перехода */
   still.classList.remove('on'); await wait(600);
   await setStill('img/' + r.id + '-start.jpg'); still.classList.add('on'); await wait(650);
@@ -81,7 +89,7 @@ async function enter(r) {
   /* 3. подменяем на последний кадр и убираем видео */
   await setStill('img/' + r.id + '-end.jpg'); await wait(60);
   clip.classList.remove('on'); clip.style.transition = '';
-  buttons([{ label: '← В гостиную', back: true, go: back }]);
+  buttons([{ label: L.back, back: true, go: back }]);
   busy = false;
 }
 async function back() {
@@ -90,6 +98,8 @@ async function back() {
   await setStill('img/hub.jpg'); still.classList.add('on'); await wait(600);
   busy = false; hub();
 }
+const home = document.getElementById('home'); home.setAttribute('aria-label', L.home); home.href = '../index.html?lang=' + LANG + '#/unit/3C';
+still.alt = L.apt + ' · ' + L.hub;
 hub();
 </script>
 </body>

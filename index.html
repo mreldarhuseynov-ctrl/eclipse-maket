@@ -21,7 +21,7 @@ header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px s
 .logo{font-size:15px;letter-spacing:.34em;text-decoration:none;white-space:nowrap}
 .tag{font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:2px 8px;color:var(--mute);white-space:nowrap}
 .sp{flex:1}
-.lang{display:flex;flex:none}.lang button{font-size:12px;padding:4px;color:var(--mute)}.lang button.on{color:var(--ink);font-weight:600}
+.lang{display:flex;flex:none}.lang button{font-size:12px;padding:8px 5px;color:var(--mute);cursor:pointer}.lang button.on{color:var(--ink);font-weight:600}
 .ecl{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);position:relative;overflow:hidden;background:var(--card)}
 .ecl i{position:absolute;inset:8px;border-radius:50%;background:var(--bronze)}
 .ecl b{position:absolute;inset:8px;border-radius:50%;background:var(--card);transform:translateX(125%);transition:transform .9s cubic-bezier(.6,0,.2,1)}
@@ -48,7 +48,7 @@ p.lead{color:var(--mute);margin-bottom:12px;max-width:60ch}
 .li .t{flex:1}.li .m{font-size:12px;color:var(--mute)}.li b{white-space:nowrap;font-weight:600}
 .note{font-size:12px;color:var(--mute);margin-top:10px}
 .pic{position:relative;border-radius:16px;overflow:hidden;background:var(--soft)}
-.pic img{width:100%;height:100%;object-fit:cover}
+.pic img,.pic video{width:100%;height:100%;object-fit:cover;display:block}
 .pic .cap{position:absolute;left:12px;bottom:10px;font-size:11px;letter-spacing:.06em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
 /* день и ночь: затмение */
 .hero{aspect-ratio:4/5;max-height:72vh;width:100%}
@@ -121,32 +121,200 @@ input[type=text]{width:100%;min-height:46px;border:1px solid var(--line);border-
 <header>
   <div class="hrow">
     <a class="logo serif" href="#/">ECLIPSE</a>
-    <span class="tag">концепт</span>
+    <span class="tag" id="tag">концепт</span>
     <span class="sp"></span>
     <nav class="bot" id="nav"></nav>
-    <span class="lang" title="EN и ES появятся позже"><button disabled>EN</button><button disabled>ES</button><button class="on">RU</button></span>
+    <span class="lang" id="lang"></span>
     <button class="ecl" id="ecl" title="День и ночь" aria-label="День и ночь"><i></i><b></b></button>
   </div>
   <div class="crumbs" id="crumbs"></div>
 </header>
-<main id="main"><p class="lead">Загрузка…</p></main>
+<main id="main"></main>
 </div>
 <div class="veil" id="veil"><div class="sheet" id="sheet"></div></div>
 
 <script>
 /* Eclipse: витрина-концепт. Дом выдуман, место настоящее. Данные: data/*.json из этапов 2 и 3. */
+/* Языки: русский, английский, испанский. Строки интерфейса в I18N, значения из данных (на русском) переводятся через DATA. */
+const I18N={
+ru:{title:"Eclipse — Золотая миля, Марбелья",concept:"концепт",dayNight:"День и ночь",loading:"Загрузка…",
+ nav_area:"Район",nav_building:"Дом",nav_list:"Список",nav_fav:"Избранное",nav_more:"Ещё",
+ filter:"Фильтр",match:(a,b)=>`подходит ${a} из ${b}`,
+ foot:"Eclipse — концепт. Дом выдуман, место настоящее. Цены, сроки и статусы условные. Изображения созданы с помощью AI по чертежам и рельефу. Данные: Catastro, IGN España (CC BY 4.0), © участники OpenStreetMap.",
+ home_crumb:"Золотая миля, Марбелья",home_sub:"Золотая миля · Марбелья",altDay:"Eclipse днём",altNight:"Eclipse ночью",
+ home_note:"Нажмите на диск справа вверху: день сменится ночью.",home_h:"Двадцать две резиденции над бульваром Золотой мили",
+ home_lead:"Четыре этажа и пентхаус на южном склоне. Каждая терраса смотрит на море, каждая спальня с северной стороны смотрит на Ла-Кончу.",
+ st_units:"квартиры",st_floors:"этажа и пентхаус",min:"мин",km:"км",m:"м",m2:"м²",st_beach:"пешком до пляжа",
+ choose:"Выбрать квартиру",example:"Пример: 3C",area_h:"Золотая миля",
+ area_lead:"Склон над бульваром, напротив Puente Romano. Минуты посчитаны по дорожной сети от участка; на машине без пробок.",
+ altAerial:"Аэрофотоснимок участка",area_cap:"Участок и бульвар · снимок PNOA, IGN España",walk:"Пешком",car:"На машине",far40:"дальше 40 минут",
+ area_note:"Нажатие на место открывает его сайт или запись на карте OpenStreetMap.",see_building:"Смотреть дом",
+ facade:"Фасад",siteplan:"Генплан",bld_h:"Выберите этаж или квартиру",as_list:"Показать списком",
+ bld_note:"Слева запад, справа восток. Все террасы смотрят на юг, к морю.",
+ st_free:"Свободна",st_res:"Бронь",st_sold:"Продана",ph:"ПХ",fl_s:f=>f+" эт",fl:f=>f+" этаж",penthouse:"Пентхаус",
+ floorplan_alt:"План этажа",floor_units:"Квартиры этажа",terr:"терраса",
+ floor_note:(l,v)=>`Отметка пола ${l} м над морем. Вид с этажа: ${v}.`,apt:"Квартира",
+ tab_plan:"Планировка",tab_rooms:"Комнаты",tab_pay:"Платежи",tab_costs:"Расходы",tab_incl:"В цену входит",
+ pay_res:"Бронь",pay_contract:"Договор, 30%",pay_build:"В ходе стройки, 20%",pay_done:"При сдаче, 50%",
+ cost_fee:"Платежи комплекса",per_month:"в месяц",cost_tax:"Налог на недвижимость",
+ incl_kitchen:"Кухня с техникой",incl_parking:"Два места в паркинге",incl_storage:"Кладовая",
+ shown3c:" · показана квартира 3C",int_note:"Интерьеры сняты в квартире 3C (2 спальни). Для этой планировки кадры ещё не сделаны: стиль и материалы те же.",
+ beds:"спальни",baths:"ванные",m2terr:"м² терраса",garden:n=>`Собственный сад ${n} м² с бассейном.`,
+ tour:"Тур по квартире",plan3d:"Планировка в 3D",tour_soon:"Тур скоро",terr_view:"Вид с террасы",
+ tour_note3c:"Тур и планировка в 3D показывают квартиру 3C: та же планировка «2 спальни».",
+ tour_none:"Тур пока сделан для планировки «2 спальни». Откройте 3C, чтобы пройтись.",
+ fav_on:"♥ В избранном",fav_off:"♡ В избранное",cmp_on:"✓ В сравнении",cmp_off:"Сравнить",share:"Поделиться",
+ your_agent:"Ваш агент",sales:"Отдел продаж Eclipse",contact_ph:"Контакт появится здесь",book:"Записаться на показ",
+ terrace:"Терраса",fullscreen:"Во весь экран",t_morning:"Утро",t_sunset:"Закат",t_night:"Ночь",
+ terr_alt:t=>`Вид с террасы, ${t}`,terr_cap:t=>`Вид на юг, к морю · ${t}`,
+ terr_lead:(f,e,s)=>`${f} · высота глаз ${e} м над морем · ${s}`,
+ terr_note3:"Линия горизонта, ширина моря и положение зданий взяты с настоящего рельефа и кадастра для высоты третьего этажа.",
+ terr_noteX:f=>`Показан вид с третьего этажа. Для ${f==5?"пентхауса":f+"-го этажа"} он ещё не снят: ${f>3?"с этой высоты моря видно больше.":"с этой высоты часть моря закрывают сосны."}`,
+ back_apt:"Назад к квартире",c_no:"№",c_floor:"Этаж",c_beds:"Спальни",c_terr:"Терраса",c_view:"Вид",c_price:"Цена",c_status:"Статус",
+ all_apts:"Все квартиры",list_note:"Нажмите на заголовок столбца, чтобы отсортировать. Нажмите на строку, чтобы открыть квартиру.",
+ fav_empty:"Пока пусто. Откройте квартиру и нажмите «В избранное».",compare_h:"Сравнение",c_area:"Площадь",c_month:"В месяц",
+ cmp_empty:"Добавьте до трёх квартир кнопкой «Сравнить».",contact:"Связаться",dev:"Для девелопера",dev_sub:"Карта спроса, ссылка агента",
+ section:"Разрез дома по склону",tour3c:"Тур по квартире 3C",tour_sub:"Гостиная, кухня, спальни, ванная, терраса",walk3c:"Прогулка по квартире 3C",walk_sub:"Серая проба в 3D",
+ dev_lead:"Что вы видите, пока покупатели смотрят дом. Цифры на этом экране демонстрационные.",dev_map:"Карта спроса: просмотры за 30 дней",
+ dev_top:"Самые просматриваемые",d_views:"Просмотры",d_fav:"В избранном",d_cmp:"Сравнения",d_links:"Ссылки",
+ agent_link:"Ссылка агента",agent_label:"Имя и телефон агента",agent_ph:"Например: Анна, +34 600 000 000",agent_btn:"Открыть квартиру 3C с контактами агента",
+ agent_note:"Покупатель по такой ссылке видит контакты агента, а не отдела продаж.",contact_in:id=>`Квартира ${id} уже указана в заявке.`,
+ book_h:"Запись на показ",f_name:"Имя",f_phone:"Телефон или почта",f_time:"Удобное время",send:"Отправить",
+ concept_msg:"Это концепт: заявка никуда не отправляется.",cmp_max:"В сравнении не больше трёх квартир.",copied:id=>`Ссылка на квартиру ${id} скопирована.`,
+ f_beds:"Спальни, не меньше",any:"Любые",budget:"Бюджет до:",nolimit:"не важно",extra:"Дополнительно",sea_open:"Открытый вид на море",only_free:"Только свободные",
+ reset:"Сбросить",show:n=>`Показать ${n}`,load_err:m=>`Данные не загрузились: ${m}. Сайт нужно открывать через сервер, а не двойным щелчком по файлу.`},
+en:{title:"Eclipse — Golden Mile, Marbella",concept:"concept",dayNight:"Day and night",loading:"Loading…",
+ nav_area:"Area",nav_building:"Building",nav_list:"List",nav_fav:"Saved",nav_more:"More",
+ filter:"Filter",match:(a,b)=>`${a} of ${b} match`,
+ foot:"Eclipse is a concept. The building is invented; the location is real. Prices, dates and availability are illustrative. Images were created with AI from the drawings and the terrain. Data: Catastro, IGN España (CC BY 4.0), © OpenStreetMap contributors.",
+ home_crumb:"Golden Mile, Marbella",home_sub:"Golden Mile · Marbella",altDay:"Eclipse by day",altNight:"Eclipse by night",
+ home_note:"Tap the disc at the top right to turn day into night.",home_h:"Twenty-two residences above the Golden Mile boulevard",
+ home_lead:"Four floors and a penthouse level on a south-facing slope. Every terrace looks out to the sea; every north-facing bedroom looks up to La Concha.",
+ st_units:"apartments",st_floors:"floors and penthouse",min:"min",km:"km",m:"m",m2:"m²",st_beach:"walk to the beach",
+ choose:"Choose an apartment",example:"Example: 3C",area_h:"Golden Mile",
+ area_lead:"A slope above the boulevard, opposite Puente Romano. Times are measured along the road network from the plot; driving times assume no traffic.",
+ altAerial:"Aerial photo of the plot",area_cap:"The plot and the boulevard · PNOA image, IGN España",walk:"On foot",car:"By car",far40:"more than 40 minutes",
+ area_note:"Tap a place to open its website or its OpenStreetMap entry.",see_building:"View the building",
+ facade:"Facade",siteplan:"Site plan",bld_h:"Choose a floor or an apartment",as_list:"Show as a list",
+ bld_note:"West is on the left, east on the right. Every terrace faces south, towards the sea.",
+ st_free:"Available",st_res:"Reserved",st_sold:"Sold",ph:"PH",fl_s:f=>"Fl "+f,fl:f=>"Floor "+f,penthouse:"Penthouse",
+ floorplan_alt:"Floor plan",floor_units:"Apartments on this floor",terr:"terrace",
+ floor_note:(l,v)=>`Floor level: ${l} m above sea level. View from this floor: ${v}.`,apt:"Apartment",
+ tab_plan:"Floor plan",tab_rooms:"Rooms",tab_pay:"Payments",tab_costs:"Running costs",tab_incl:"Included",
+ pay_res:"Reservation",pay_contract:"Contract, 30%",pay_build:"During construction, 20%",pay_done:"On completion, 50%",
+ cost_fee:"Community fees",per_month:"per month",cost_tax:"Property tax",
+ incl_kitchen:"Fitted kitchen with appliances",incl_parking:"Two parking spaces",incl_storage:"Storage room",
+ shown3c:" · apartment 3C shown",int_note:"The interiors shown are from apartment 3C (2 bedrooms). Images for this layout have not been made yet; the style and materials are the same.",
+ beds:"bedrooms",baths:"bathrooms",m2terr:"m² terrace",garden:n=>`Private garden of ${n} m² with a pool.`,
+ tour:"Apartment tour",plan3d:"Layout in 3D",tour_soon:"Tour coming soon",terr_view:"Terrace view",
+ tour_note3c:"The tour and the 3D layout show apartment 3C, which has the same 2-bedroom layout.",
+ tour_none:"The tour is currently available for the 2-bedroom layout only. Open 3C to walk through it.",
+ fav_on:"♥ Saved",fav_off:"♡ Save",cmp_on:"✓ Comparing",cmp_off:"Compare",share:"Share",
+ your_agent:"Your agent",sales:"Eclipse sales office",contact_ph:"Contact details will appear here",book:"Book a viewing",
+ terrace:"Terrace",fullscreen:"Full screen",t_morning:"Morning",t_sunset:"Sunset",t_night:"Night",
+ terr_alt:t=>`Terrace view, ${t}`,terr_cap:t=>`Looking south to the sea · ${t}`,
+ terr_lead:(f,e,s)=>`${f} · eye level ${e} m above sea level · ${s}`,
+ terr_note3:"The horizon line, the width of the sea and the position of the buildings come from real terrain and cadastre data at third-floor height.",
+ terr_noteX:f=>`This is the view from the third floor. The view from ${f==5?"the penthouse level":"floor "+f} has not been made yet: ${f>3?"from that height you see more of the sea.":"from that height the pines hide part of the sea."}`,
+ back_apt:"Back to the apartment",c_no:"No.",c_floor:"Floor",c_beds:"Bedrooms",c_terr:"Terrace",c_view:"View",c_price:"Price",c_status:"Status",
+ all_apts:"All apartments",list_note:"Tap a column heading to sort. Tap a row to open the apartment.",
+ fav_empty:"Nothing here yet. Open an apartment and tap “Save”.",compare_h:"Comparison",c_area:"Area",c_month:"Per month",
+ cmp_empty:"Add up to three apartments with the “Compare” button.",contact:"Contact",dev:"For developers",dev_sub:"Demand map, agent link",
+ section:"Section through the building and the slope",tour3c:"Tour of apartment 3C",tour_sub:"Living room, kitchen, bedrooms, bathroom, terrace",walk3c:"Walk through apartment 3C",walk_sub:"Unfinished grey 3D model",
+ dev_lead:"What you see while buyers explore the building. The figures on this screen are for demonstration only.",dev_map:"Demand map: views in the last 30 days",
+ dev_top:"Most viewed",d_views:"Views",d_fav:"Saved",d_cmp:"Comparisons",d_links:"Shares",
+ agent_link:"Agent link",agent_label:"Agent's name and phone",agent_ph:"e.g. Anna, +34 600 000 000",agent_btn:"Open apartment 3C with the agent's details",
+ agent_note:"A buyer who opens this link sees the agent's details instead of the sales office.",contact_in:id=>`Apartment ${id} is already included in your request.`,
+ book_h:"Book a viewing",f_name:"Name",f_phone:"Phone or email",f_time:"Preferred time",send:"Send",
+ concept_msg:"This is a concept: the request is not sent anywhere.",cmp_max:"You can compare up to three apartments.",copied:id=>`Link to apartment ${id} copied.`,
+ f_beds:"Bedrooms, at least",any:"Any",budget:"Budget up to:",nolimit:"no limit",extra:"More options",sea_open:"Open sea view",only_free:"Available only",
+ reset:"Reset",show:n=>`Show ${n}`,load_err:m=>`The data did not load: ${m}. The site has to be opened through a server, not by double-clicking the file.`},
+es:{title:"Eclipse — Milla de Oro, Marbella",concept:"concepto",dayNight:"Día y noche",loading:"Cargando…",
+ nav_area:"Zona",nav_building:"Edificio",nav_list:"Lista",nav_fav:"Favoritos",nav_more:"Más",
+ filter:"Filtro",match:(a,b)=>`${a} de ${b} coinciden`,
+ foot:"Eclipse es un concepto. El edificio es inventado; el lugar es real. Los precios, los plazos y la disponibilidad son orientativos. Las imágenes se han creado con IA a partir de los planos y del relieve. Datos: Catastro, IGN España (CC BY 4.0), © colaboradores de OpenStreetMap.",
+ home_crumb:"Milla de Oro, Marbella",home_sub:"Milla de Oro · Marbella",altDay:"Eclipse de día",altNight:"Eclipse de noche",
+ home_note:"Toque el disco de arriba a la derecha: el día se convierte en noche.",home_h:"Veintidós residencias sobre el bulevar de la Milla de Oro",
+ home_lead:"Cuatro plantas y un nivel de áticos en una ladera orientada al sur. Todas las terrazas miran al mar; los dormitorios del lado norte miran a La Concha.",
+ st_units:"apartamentos",st_floors:"plantas y ático",min:"min",km:"km",m:"m",m2:"m²",st_beach:"a pie hasta la playa",
+ choose:"Elegir apartamento",example:"Ejemplo: 3C",area_h:"Milla de Oro",
+ area_lead:"Una ladera sobre el bulevar, frente a Puente Romano. Los tiempos se miden por la red viaria desde la parcela; en coche, sin tráfico.",
+ altAerial:"Fotografía aérea de la parcela",area_cap:"La parcela y el bulevar · imagen PNOA, IGN España",walk:"A pie",car:"En coche",far40:"más de 40 minutos",
+ area_note:"Toque un lugar para abrir su web o su ficha en OpenStreetMap.",see_building:"Ver el edificio",
+ facade:"Fachada",siteplan:"Plano de situación",bld_h:"Elija una planta o un apartamento",as_list:"Ver como lista",
+ bld_note:"El oeste queda a la izquierda y el este a la derecha. Todas las terrazas miran al sur, hacia el mar.",
+ st_free:"Disponible",st_res:"Reservado",st_sold:"Vendido",ph:"Át.",fl_s:f=>"P"+f,fl:f=>"Planta "+f,penthouse:"Ático",
+ floorplan_alt:"Plano de planta",floor_units:"Apartamentos de la planta",terr:"terraza",
+ floor_note:(l,v)=>`Cota del suelo: ${l} m sobre el nivel del mar. Vistas desde la planta: ${v}.`,apt:"Apartamento",
+ tab_plan:"Plano",tab_rooms:"Estancias",tab_pay:"Pagos",tab_costs:"Gastos",tab_incl:"Incluido",
+ pay_res:"Reserva",pay_contract:"Contrato, 30%",pay_build:"Durante la obra, 20%",pay_done:"A la entrega, 50%",
+ cost_fee:"Gastos de comunidad",per_month:"al mes",cost_tax:"Impuesto sobre bienes inmuebles (IBI)",
+ incl_kitchen:"Cocina equipada con electrodomésticos",incl_parking:"Dos plazas de aparcamiento",incl_storage:"Trastero",
+ shown3c:" · se muestra el apartamento 3C",int_note:"Los interiores corresponden al apartamento 3C (2 dormitorios). Aún no hay imágenes de esta tipología; el estilo y los materiales son los mismos.",
+ beds:"dormitorios",baths:"baños",m2terr:"m² terraza",garden:n=>`Jardín privado de ${n} m² con piscina.`,
+ tour:"Recorrido virtual",plan3d:"Plano en 3D",tour_soon:"Recorrido próximamente",terr_view:"Vistas",
+ tour_note3c:"El recorrido y la distribución en 3D muestran el apartamento 3C, con la misma tipología de 2 dormitorios.",
+ tour_none:"El recorrido solo está disponible por ahora para la tipología de 2 dormitorios. Abra el 3C para recorrerlo.",
+ fav_on:"♥ En favoritos",fav_off:"♡ Guardar",cmp_on:"✓ En comparación",cmp_off:"Comparar",share:"Compartir",
+ your_agent:"Su agente",sales:"Oficina de ventas de Eclipse",contact_ph:"Los datos de contacto aparecerán aquí",book:"Solicitar una visita",
+ terrace:"Terraza",fullscreen:"Pantalla completa",t_morning:"Mañana",t_sunset:"Atardecer",t_night:"Noche",
+ terr_alt:t=>`Vistas desde la terraza, ${t}`,terr_cap:t=>`Vista al sur, hacia el mar · ${t}`,
+ terr_lead:(f,e,s)=>`${f} · altura de la vista: ${e} m sobre el nivel del mar · ${s}`,
+ terr_note3:"La línea del horizonte, la anchura del mar y la posición de los edificios proceden del relieve y del catastro reales, a la altura de la tercera planta.",
+ terr_noteX:f=>`Se muestran las vistas desde la tercera planta. Las ${f==5?"del ático":"de la planta "+f} aún no están hechas: ${f>3?"desde esa altura se ve más mar.":"desde esa altura los pinos tapan parte del mar."}`,
+ back_apt:"Volver al apartamento",c_no:"N.º",c_floor:"Planta",c_beds:"Dormitorios",c_terr:"Terraza",c_view:"Vistas",c_price:"Precio",c_status:"Estado",
+ all_apts:"Todos los apartamentos",list_note:"Toque el título de una columna para ordenar. Toque una fila para abrir el apartamento.",
+ fav_empty:"Aún no hay nada. Abra un apartamento y toque «Guardar».",compare_h:"Comparación",c_area:"Superficie",c_month:"Al mes",
+ cmp_empty:"Añada hasta tres apartamentos con el botón «Comparar».",contact:"Contacto",dev:"Para promotores",dev_sub:"Mapa de demanda, enlace del agente",
+ section:"Sección del edificio en la ladera",tour3c:"Recorrido por el apartamento 3C",tour_sub:"Salón, cocina, dormitorios, baño, terraza",walk3c:"Paseo por el apartamento 3C",walk_sub:"Maqueta gris en 3D, sin acabados",
+ dev_lead:"Lo que usted ve mientras los compradores exploran el edificio. Las cifras de esta pantalla son de demostración.",dev_map:"Mapa de demanda: visitas en los últimos 30 días",
+ dev_top:"Los más vistos",d_views:"Visitas",d_fav:"Favoritos",d_cmp:"Comparaciones",d_links:"Enlaces",
+ agent_link:"Enlace del agente",agent_label:"Nombre y teléfono del agente",agent_ph:"p. ej.: Ana, +34 600 000 000",agent_btn:"Abrir el apartamento 3C con los datos del agente",
+ agent_note:"Quien abre este enlace ve los datos del agente y no los de la oficina de ventas.",contact_in:id=>`El apartamento ${id} ya figura en su solicitud.`,
+ book_h:"Solicitar una visita",f_name:"Nombre",f_phone:"Teléfono o correo",f_time:"Horario preferido",send:"Enviar",
+ concept_msg:"Esto es un concepto: la solicitud no se envía a ningún sitio.",cmp_max:"Se pueden comparar hasta tres apartamentos.",copied:id=>`Enlace al apartamento ${id} copiado.`,
+ f_beds:"Dormitorios, mínimo",any:"Cualquiera",budget:"Presupuesto hasta:",nolimit:"sin límite",extra:"Más opciones",sea_open:"Vistas despejadas al mar",only_free:"Solo disponibles",
+ reset:"Restablecer",show:n=>`Ver ${n}`,load_err:m=>`No se han cargado los datos: ${m}. El sitio debe abrirse a través de un servidor, no con doble clic en el archivo.`}
+};
+/* значения из данных: ключ — русская строка из data/*.json */
+const DATA={
+en:{"2 спальни":"2 bedrooms","3 спальни":"3 bedrooms","4 спальни":"4 bedrooms","Пентхаус, 4 спальни":"Penthouse, 4 bedrooms","С садом, 2 спальни":"Garden apartment, 2 bedrooms","С садом, 3 спальни":"Garden apartment, 3 bedrooms",
+ "Юг":"South","Юг, юго-восток":"South and south-east","Юг, юго-запад":"South and south-west",
+ "Море":"Sea","Панорама: море и горы":"Panorama: sea and mountains","Сад и море сквозь сосны":"Garden and sea through the pines","Сад, море сквозь сосны":"Garden, sea through the pines",
+ "Ванная":"Bathroom","Галерея":"Gallery","Гардероб":"Dressing room","Гостиная":"Living room","Гостиная с кухней":"Living room with kitchen","Домашний кинозал":"Home cinema","Кабинет":"Study","Кладовая":"Storage","Кладовая и прачечная":"Storage and laundry","Кухня":"Kitchen","Кухня-столовая":"Kitchen and dining","Прихожая":"Entrance hall","Спальня":"Bedroom","Столовая":"Dining room",
+ "Рядом":"Nearby","Пляж":"Beach","Рестораны":"Restaurants","Магазины":"Shops","Школы":"Schools","Здоровье":"Health","Спорт":"Sport","Дорога":"Getting around",
+ "IES Guadalpín (государственная)":"IES Guadalpín (state school)","Paseo Marítimo (набережная)":"Paseo Marítimo (seafront promenade)","Farmacia Marbella Real (аптека)":"Farmacia Marbella Real (pharmacy)","Теннисные корты Puente Romano":"Puente Romano Tennis Club","Отель Puente Romano":"Puente Romano Hotel","Старый город, Plaza de los Naranjos":"Old Town, Plaza de los Naranjos","Автовокзал Марбельи":"Marbella bus station","Аэропорт Малаги":"Málaga Airport"},
+es:{"2 спальни":"2 dormitorios","3 спальни":"3 dormitorios","4 спальни":"4 dormitorios","Пентхаус, 4 спальни":"Ático, 4 dormitorios","С садом, 2 спальни":"Con jardín, 2 dormitorios","С садом, 3 спальни":"Con jardín, 3 dormitorios",
+ "Юг":"Sur","Юг, юго-восток":"Sur y sureste","Юг, юго-запад":"Sur y suroeste",
+ "Море":"Mar","Панорама: море и горы":"Panorámica: mar y montaña","Сад и море сквозь сосны":"Jardín y mar entre los pinos","Сад, море сквозь сосны":"Jardín, mar entre los pinos",
+ "Ванная":"Baño","Галерея":"Galería","Гардероб":"Vestidor","Гостиная":"Salón","Гостиная с кухней":"Salón con cocina","Домашний кинозал":"Sala de cine","Кабинет":"Despacho","Кладовая":"Trastero","Кладовая и прачечная":"Trastero y lavadero","Кухня":"Cocina","Кухня-столовая":"Cocina comedor","Прихожая":"Recibidor","Спальня":"Dormitorio","Столовая":"Comedor",
+ "Рядом":"Cerca","Пляж":"Playa","Рестораны":"Restaurantes","Магазины":"Tiendas","Школы":"Colegios","Здоровье":"Salud","Спорт":"Deporte","Дорога":"Conexiones",
+ "IES Guadalpín (государственная)":"IES Guadalpín (instituto público)","Paseo Marítimo (набережная)":"Paseo Marítimo","Farmacia Marbella Real (аптека)":"Farmacia Marbella Real","Теннисные корты Puente Romano":"Club de Tenis Puente Romano","Отель Puente Romano":"Hotel Puente Romano","Старый город, Plaza de los Naranjos":"Casco Antiguo, Plaza de los Naranjos","Автовокзал Марбельи":"Estación de autobuses de Marbella","Аэропорт Малаги":"Aeropuerto de Málaga"}
+};
+const LANGS=["en","es","ru"],LOC={ru:"ru-RU",en:"en-GB",es:"es-ES"};
+function pickLang(){const m=location.search.match(/[?&]lang=(ru|en|es)/);if(m)return m[1];try{if(LANGS.includes(localStorage.eclLang))return localStorage.eclLang}catch(e){}const n=(navigator.language||"en").slice(0,2).toLowerCase();return LANGS.includes(n)?n:"en"}
+let LANG=pickLang();
+const t=(k,...a)=>{const s=I18N[LANG][k]??I18N.ru[k]??k;return typeof s=="function"?s(...a):s};
+/* перевод значения из данных; «Спальня 2» → «Bedroom 2» */
+const D=v=>{if(LANG=="ru"||v==null)return v;const d=DATA[LANG];if(d[v])return d[v];const m=String(v).match(/^(.*?) (\d+)$/);return m&&d[m[1]]?d[m[1]]+" "+m[2]:v};
+const low=s=>String(s).toLowerCase();
+const PL=()=>"plans/"+(LANG=="ru"?"":LANG+"/");
+function setLang(l){LANG=l;try{localStorage.eclLang=l}catch(e){}chrome();closeSheet();draw(true)}
+function chrome(){document.documentElement.lang=LANG;document.title=t("title");$("#tag").textContent=t("concept");$("#ecl").title=t("dayNight");$("#ecl").setAttribute("aria-label",t("dayNight"));
+  $("#lang").innerHTML=LANGS.map(l=>`<button class="${l==LANG?"on":""}" onclick="setLang('${l}')" aria-label="${{en:"English",es:"Español",ru:"Русский"}[l]}">${l.toUpperCase()}</button>`).join("")}
+
 let UNITS=[],DOM={},PLACES={};
-const STN={free:"Свободна",res:"Бронь",sold:"Продана"};
-const FLN=f=>f==5?"Пентхаус":f+" этаж";
-const TYPE_SHORT={T2:"2 спальни",T3:"3 спальни",T4:"4 спальни",G:"С садом",G2:"С садом",PH:"Пентхаус"};
+const STN=s=>t("st_"+s);
+const FLN=f=>f==5?t("penthouse"):t("fl",f);
+const FLS=f=>f==5?t("ph"):t("fl_s",f);
 const SHOTS=[["gostinaya","Гостиная"],["kuhnya","Кухня"],["spalnya1","Спальня 1"],["spalnya2","Спальня 2"],["vannaya","Ванная"]];
-const VIEWS={"Утро":"terrasa-utro","Закат":"terrasa-zakat","Ночь":"terrasa-noch"};
+const VIEWS={morning:"terrasa-utro",sunset:"terrasa-zakat",night:"terrasa-noch"};
 const CATS=["Рядом","Пляж","Рестораны","Магазины","Школы","Здоровье","Спорт","Дорога"];
 function load(k){try{return JSON.parse(localStorage[k]||"[]")}catch(e){return[]}}
-const S={beds:0,max:0,sea:false,free:false,fav:load("eclFav2"),cmp:load("eclCmp2"),cat:"Рядом",walk:true,sort:"id",dir:1,tab:"Планировка",shot:0,time:"Закат"};
+const S={beds:0,max:0,sea:false,free:false,fav:load("eclFav2"),cmp:load("eclCmp2"),cat:"Рядом",walk:true,sort:"id",dir:1,tab:"plan",shot:0,time:"sunset"};
 const $=s=>document.querySelector(s),main=$("#main");
-const eur=n=>new Intl.NumberFormat("ru-RU").format(Math.round(n))+" €";
-const num=n=>String(n).replace(".",",");
+const eur=n=>new Intl.NumberFormat(LOC[LANG]).format(Math.round(n))+" €";
+const num=n=>LANG=="en"?String(n):String(n).replace(".",",");
 const U=id=>UNITS.find(u=>u.id==id);
 const night=()=>document.body.classList.contains("night");
 const pass=u=>(!S.beds||u.bed>=S.beds)&&(!S.max||u.price<=S.max)&&(!S.sea||u.floor>=3)&&(!S.free||u.status=="free");
@@ -156,109 +324,111 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const q=()=>agent()?"?agent="+encodeURIComponent(agent()):"";
 const save=()=>{try{localStorage.eclFav2=JSON.stringify(S.fav);localStorage.eclCmp2=JSON.stringify(S.cmp)}catch(e){}};
 function go(h){location.hash=h+(h.includes("?")?"":q())}
-function nav(cur){const it=[["#/area","◎","Район"],["#/building","▦","Дом"],["#/list","≡","Список"],["#/fav","♡","Избранное"+(S.fav.length?" "+S.fav.length:"")],["#/more","⋯","Ещё"]];
-  $("#nav").innerHTML=it.map(([h,i,t])=>`<a href="${h+q()}" class="${cur==h?"on":""}"><b>${i}</b>${t}</a>`).join("")}
-function crumbs(a){$("#crumbs").innerHTML=a.map(([t,h],i)=>i==a.length-1?`<span class="cur">${t}</span>`:`<a href="${h+q()}">${t}</a>`).join(" › ")}
-const fbar=()=>`<div class="row" style="margin:10px 0;align-items:center"><button class="btn sm ${active()?"on":""}" onclick="filter()">Фильтр${active()?" ✓":""}</button><span style="font-size:13px;color:var(--mute)">подходит ${UNITS.filter(pass).length} из ${UNITS.length}</span></div>`;
+function nav(cur){const it=[["#/area","◎",t("nav_area")],["#/building","▦",t("nav_building")],["#/list","≡",t("nav_list")],["#/fav","♡",t("nav_fav")+(S.fav.length?" "+S.fav.length:"")],["#/more","⋯",t("nav_more")]];
+  $("#nav").innerHTML=it.map(([h,i,n])=>`<a href="${h+q()}" class="${cur==h?"on":""}"><b>${i}</b>${n}</a>`).join("")}
+function crumbs(a){$("#crumbs").innerHTML=a.map(([n,h],i)=>i==a.length-1?`<span class="cur">${n}</span>`:`<a href="${h+q()}">${n}</a>`).join(" › ")}
+const fbar=()=>`<div class="row" style="margin:10px 0;align-items:center"><button class="btn sm ${active()?"on":""}" onclick="filter()">${t("filter")}${active()?" ✓":""}</button><span style="font-size:13px;color:var(--mute)">${t("match",UNITS.filter(pass).length,UNITS.length)}</span></div>`;
 const cell=u=>`<button class="u ${u.status=="sold"?"sold":u.status=="res"?"res":""} ${active()?(pass(u)?"hit":"dim"):""}" style="flex:${DOM.types[u.type].W}" onclick="go('#/unit/${u.id}')"><b>${u.id}</b></button>`;
-const foot=`<p class="foot">Eclipse — концепт. Дом выдуман, место настоящее. Цены, сроки и статусы условные. Изображения созданы с помощью AI по чертежам и рельефу. Данные: Catastro, IGN España (CC BY 4.0), © участники OpenStreetMap.</p>`;
+const foot=()=>`<p class="foot">${t("foot")}</p>`;
+const tourHref=()=>"tur/index.html?lang="+LANG,walkHref=()=>"proba/index.html?lang="+LANG;
 
 const R={
-"":()=>{crumbs([["Золотая миля, Марбелья"]]);nav("");const pl=PLACES["Пляж"]?Math.min(...PLACES["Пляж"].map(p=>p.walk_min)):"";
-  main.innerHTML=`<div class="two"><div><div class="pic hero"><img src="img/fasad-den.jpg" alt="Eclipse днём"><img class="nightimg" src="img/fasad-noch.jpg" alt="Eclipse ночью"><div class="ttl"><h1 class="serif">Eclipse</h1><div>Золотая миля · Марбелья</div></div></div>
-  <p class="note">Нажмите на диск справа вверху: день сменится ночью.</p></div><div>
-  <h2 class="serif" style="margin-top:14px">Двадцать две резиденции над бульваром Золотой мили</h2>
-  <p class="lead">Четыре этажа и пентхаус на южном склоне. Каждая терраса смотрит на море, каждая спальня с северной стороны смотрит на Ла-Кончу.</p>
-  <div class="grid3"><div class="card stat"><b class="serif">${UNITS.length}</b><span>квартиры</span></div><div class="card stat"><b class="serif">4 + 1</b><span>этажа и пентхаус</span></div><div class="card stat"><b class="serif">${pl} мин</b><span>пешком до пляжа</span></div></div>
-  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">Выбрать квартиру</button></div>
-  <div class="row fill" style="margin-top:8px"><button class="btn" onclick="go('#/area')">Район</button><button class="btn" onclick="go('#/unit/3C')">Пример: 3C</button></div>
-  </div></div>${foot}`},
-"area":()=>{crumbs([["Район"]]);nav("#/area");const L=PLACES[S.cat]||[];
-  main.innerHTML=`<h2 class="serif">Золотая миля</h2><p class="lead">Склон над бульваром, напротив Puente Romano. Минуты посчитаны по дорожной сети от участка; на машине без пробок.</p>
-  <div class="two"><div><div class="pic" style="aspect-ratio:1/1"><img src="img/aerofoto.jpg" alt="Аэрофотоснимок участка"><div class="cap">Участок и бульвар · снимок PNOA, IGN España</div></div></div><div>
-  <div class="chips" style="margin-top:12px">${CATS.filter(c=>PLACES[c]).map(c=>`<button class="btn sm ${c==S.cat?"on":""}" onclick="S.cat='${c}';draw()">${c}</button>`).join("")}</div>
-  <div class="row" style="margin:10px 0"><button class="btn sm ${S.walk?"on":""}" onclick="S.walk=true;draw()">Пешком</button><button class="btn sm ${!S.walk?"on":""}" onclick="S.walk=false;draw()">На машине</button></div>
-  <div class="list">${L.map(p=>`<a class="li" href="${p.site||p.osm}" target="_blank" rel="noopener"><span class="t">${esc(p.name)}<div class="m">${S.walk?(p.walk_min<=40?p.walk_m+" м":"дальше 40 минут"):num(p.car_km)+" км"}</div></span><b>${S.walk?(p.walk_min<=40?p.walk_min+" мин":"—"):p.car_min+" мин"}</b></a>`).join("")}</div>
-  <p class="note">Нажатие на место открывает его сайт или запись на карте OpenStreetMap.</p>
-  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">Смотреть дом</button></div></div></div>${foot}`},
-"building":()=>{crumbs([["Район","#/area"],["Дом"]]);nav("#/building");
-  main.innerHTML=`<div class="two"><div><div class="pic" style="aspect-ratio:16/10"><img src="img/${night()?"fasad-noch":"fasad-den"}-s.jpg" alt="Фасад"></div>
-  <h3>Генплан</h3><div class="plan"><object data="plans/genplan.svg" type="image/svg+xml" style="width:100%;min-width:560px;display:block"></object></div></div><div>
-  <h2 class="serif" style="margin-top:14px">Выберите этаж или квартиру</h2>${fbar()}
-  <div class="card"><div class="bld">${[5,4,3,2,1].map(f=>`<div class="fl f${f}"><button class="lab" onclick="go('#/floor/${f}')">${f==5?"ПХ":f+" эт"} ›</button><div class="us">${UNITS.filter(u=>u.floor==f).map(cell).join("")}</div></div>`).join("")}</div>
-  <div class="legend"><span><i style="background:var(--soft)"></i>свободна</span><span><i style="background:color-mix(in srgb,var(--bronze) 28%,var(--soft))"></i>бронь</span><span><i style="border-style:dashed"></i>продана</span></div></div>
-  <div class="row fill" style="margin-top:12px"><button class="btn" onclick="go('#/list')">Показать списком</button></div>
-  <p class="note">Слева запад, справа восток. Все террасы смотрят на юг, к морю.</p></div></div>${foot}`},
-"floor":f=>{f=+f||1;crumbs([["Район","#/area"],["Дом","#/building"],[FLN(f)]]);nav("#/building");const us=UNITS.filter(u=>u.floor==f);
-  main.innerHTML=`<h2 class="serif">${FLN(f)}</h2><div class="chips">${[1,2,3,4,5].map(x=>`<button class="btn sm ${x==f?"on":""}" onclick="go('#/floor/${x}')">${x==5?"Пентхаус":x}</button>`).join("")}</div>${fbar()}
-  <div class="plan"><img src="plans/etazh-${f}.svg" alt="План этажа"></div>
-  <h3>Квартиры этажа</h3><div class="list">${us.map(u=>`<button class="li" style="${active()&&!pass(u)?"opacity:.35":""}" onclick="go('#/unit/${u.id}')"><span class="t"><b>${u.id}</b> · ${u.type_name}<div class="m">${num(u.area)} м² · терраса ${num(u.terrace)} м² · ${u.side.toLowerCase()} · ${STN[u.status].toLowerCase()}</div></span><b>${eur(u.price)}</b></button>`).join("")}</div>
-  <p class="note">Отметка пола ${num(us[0].level)} м над морем. Вид с этажа: ${us[0].view.toLowerCase()}.</p>${foot}`},
-"unit":id=>{const u=U(id);if(!u)return go("#/building");const a=agent(),T=DOM.types[u.type];crumbs([["Район","#/area"],["Дом","#/building"],[FLN(u.floor),"#/floor/"+u.floor],["Квартира "+u.id]]);nav("#/building");
+"":()=>{crumbs([[t("home_crumb")]]);nav("");const pl=PLACES["Пляж"]?Math.min(...PLACES["Пляж"].map(p=>p.walk_min)):"";
+  main.innerHTML=`<div class="two"><div><div class="pic hero"><img src="img/fasad-den.jpg" alt="${t("altDay")}"><img class="nightimg" src="img/fasad-noch.jpg" alt="${t("altNight")}"><div class="ttl"><h1 class="serif">Eclipse</h1><div>${t("home_sub")}</div></div></div>
+  <p class="note">${t("home_note")}</p></div><div>
+  <h2 class="serif" style="margin-top:14px">${t("home_h")}</h2>
+  <p class="lead">${t("home_lead")}</p>
+  <div class="grid3"><div class="card stat"><b class="serif">${UNITS.length}</b><span>${t("st_units")}</span></div><div class="card stat"><b class="serif">4 + 1</b><span>${t("st_floors")}</span></div><div class="card stat"><b class="serif">${pl} ${t("min")}</b><span>${t("st_beach")}</span></div></div>
+  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">${t("choose")}</button></div>
+  <div class="row fill" style="margin-top:8px"><button class="btn" onclick="go('#/area')">${t("nav_area")}</button><button class="btn" onclick="go('#/unit/3C')">${t("example")}</button></div>
+  </div></div>${foot()}`},
+"area":()=>{crumbs([[t("nav_area")]]);nav("#/area");const L=PLACES[S.cat]||[];
+  main.innerHTML=`<h2 class="serif">${t("area_h")}</h2><p class="lead">${t("area_lead")}</p>
+  <div class="two"><div><div class="pic" style="aspect-ratio:1/1"><img src="img/aerofoto.jpg" alt="${t("altAerial")}"><div class="cap">${t("area_cap")}</div></div></div><div>
+  <div class="chips" style="margin-top:12px">${CATS.filter(c=>PLACES[c]).map(c=>`<button class="btn sm ${c==S.cat?"on":""}" onclick="S.cat='${c}';draw()">${D(c)}</button>`).join("")}</div>
+  <div class="row" style="margin:10px 0"><button class="btn sm ${S.walk?"on":""}" onclick="S.walk=true;draw()">${t("walk")}</button><button class="btn sm ${!S.walk?"on":""}" onclick="S.walk=false;draw()">${t("car")}</button></div>
+  <div class="list">${L.map(p=>`<a class="li" href="${p.site||p.osm}" target="_blank" rel="noopener"><span class="t">${esc(D(p.name))}<div class="m">${S.walk?(p.walk_min<=40?p.walk_m+" "+t("m"):t("far40")):num(p.car_km)+" "+t("km")}</div></span><b>${S.walk?(p.walk_min<=40?p.walk_min+" "+t("min"):"—"):p.car_min+" "+t("min")}</b></a>`).join("")}</div>
+  <p class="note">${t("area_note")}</p>
+  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">${t("see_building")}</button></div></div></div>${foot()}`},
+"building":()=>{crumbs([[t("nav_area"),"#/area"],[t("nav_building")]]);nav("#/building");
+  main.innerHTML=`<div class="two"><div><div class="pic" style="aspect-ratio:16/10"><img src="img/${night()?"fasad-noch":"fasad-den"}-s.jpg" alt="${t("facade")}"></div>
+  <h3>${t("siteplan")}</h3><div class="plan"><object data="${PL()}genplan.svg" type="image/svg+xml" style="width:100%;min-width:560px;display:block"></object></div></div><div>
+  <h2 class="serif" style="margin-top:14px">${t("bld_h")}</h2>${fbar()}
+  <div class="card"><div class="bld">${[5,4,3,2,1].map(f=>`<div class="fl f${f}"><button class="lab" onclick="go('#/floor/${f}')">${FLS(f)} ›</button><div class="us">${UNITS.filter(u=>u.floor==f).map(cell).join("")}</div></div>`).join("")}</div>
+  <div class="legend"><span><i style="background:var(--soft)"></i>${low(STN("free"))}</span><span><i style="background:color-mix(in srgb,var(--bronze) 28%,var(--soft))"></i>${low(STN("res"))}</span><span><i style="border-style:dashed"></i>${low(STN("sold"))}</span></div></div>
+  <div class="row fill" style="margin-top:12px"><button class="btn" onclick="go('#/list')">${t("as_list")}</button></div>
+  <p class="note">${t("bld_note")}</p></div></div>${foot()}`},
+"floor":f=>{f=+f||1;crumbs([[t("nav_area"),"#/area"],[t("nav_building"),"#/building"],[FLN(f)]]);nav("#/building");const us=UNITS.filter(u=>u.floor==f);
+  main.innerHTML=`<h2 class="serif">${FLN(f)}</h2><div class="chips">${[1,2,3,4,5].map(x=>`<button class="btn sm ${x==f?"on":""}" onclick="go('#/floor/${x}')">${x==5?t("penthouse"):x}</button>`).join("")}</div>${fbar()}
+  <div class="plan"><img src="${PL()}etazh-${f}.svg" alt="${t("floorplan_alt")}"></div>
+  <h3>${t("floor_units")}</h3><div class="list">${us.map(u=>`<button class="li" style="${active()&&!pass(u)?"opacity:.35":""}" onclick="go('#/unit/${u.id}')"><span class="t"><b>${u.id}</b> · ${D(u.type_name)}<div class="m">${num(u.area)} ${t("m2")} · ${t("terr")} ${num(u.terrace)} ${t("m2")} · ${low(D(u.side))} · ${low(STN(u.status))}</div></span><b>${eur(u.price)}</b></button>`).join("")}</div>
+  <p class="note">${t("floor_note",num(us[0].level),low(D(us[0].view)))}</p>${foot()}`},
+"unit":id=>{const u=U(id);if(!u)return go("#/building");const a=agent(),T=DOM.types[u.type];crumbs([[t("nav_area"),"#/area"],[t("nav_building"),"#/building"],[FLN(u.floor),"#/floor/"+u.floor],[t("apt")+" "+u.id]]);nav("#/building");
   const fav=S.fav.includes(u.id),cmp=S.cmp.includes(u.id),walkOk=u.type=="T2",sh=SHOTS[S.shot];
-  const tabs={"Планировка":`<div class="plan"><img src="plans/planirovka-${u.type}.svg" alt="Планировка" style="min-width:480px"></div>`,
-   "Комнаты":`<table>${T.rooms.map(r=>`<tr><td>${r.name}</td><td>${num(r.w)} × ${num(r.h)} м</td><td>${num(r.m2)} м²</td></tr>`).join("")}</table>`,
-   "Платежи":`<table><tr><td>Бронь</td><td>20 000 €</td></tr><tr><td>Договор, 30%</td><td>${eur(u.price*.3)}</td></tr><tr><td>В ходе стройки, 20%</td><td>${eur(u.price*.2)}</td></tr><tr><td>При сдаче, 50%</td><td>${eur(u.price*.5)}</td></tr></table>`,
-   "Расходы":`<table><tr><td>Платежи комплекса</td><td>${eur(u.fee_month)} в месяц</td></tr><tr><td>Налог на недвижимость</td><td>${eur(u.price*.0006)} в месяц</td></tr></table>`,
-   "В цену входит":`<div class="list"><div class="li">Кухня с техникой</div><div class="li">Два места в паркинге</div><div class="li">Кладовая</div></div>`};
-  if(!tabs[S.tab])S.tab="Планировка";
-  main.innerHTML=`<div class="two"><div><div class="pic" style="aspect-ratio:16/10"><img src="img/${sh[0]}.jpg" alt="${sh[1]}"><div class="cap">${sh[1]}${u.id=="3C"?"":" · показана квартира 3C"}</div></div>
-  <div class="thumbs">${SHOTS.map((s,i)=>`<button class="${i==S.shot?"on":""}" onclick="S.shot=${i};draw()" aria-label="${s[1]}"><img src="img/${s[0]}-s.jpg" alt=""></button>`).join("")}</div>
-  ${u.type=="T2"?"":`<p class="note">Интерьеры сняты в квартире 3C (2 спальни). Для этой планировки кадры ещё не сделаны: стиль и материалы те же.</p>`}</div>
-  <div><div class="row" style="align-items:center;margin-top:14px"><h1 class="serif" style="margin:0">Квартира ${u.id}</h1><span class="st ${u.status}">${STN[u.status]}</span></div>
-  <p class="lead" style="margin-top:6px">${u.type_name}${u.floor==5?"":" · "+FLN(u.floor)} · ${u.side} · ${u.view}</p>
-  <div class="facts"><div><b class="serif">${u.bed}</b><span>спальни</span></div><div><b class="serif">${u.bath}</b><span>ванные</span></div><div><b class="serif">${num(u.area)}</b><span>м²</span></div><div><b class="serif">${num(u.terrace)}</b><span>м² терраса</span></div></div>
-  ${u.garden?`<p class="note" style="margin:0 0 8px">Собственный сад ${Math.round(u.garden)} м² с бассейном.</p>`:""}
+  const tabs={plan:`<div class="plan"><img src="${PL()}planirovka-${u.type}.svg" alt="${t("tab_plan")}" style="min-width:480px"></div>`,
+   rooms:`<table>${T.rooms.map(r=>`<tr><td>${D(r.name)}</td><td>${num(r.w)} × ${num(r.h)} ${t("m")}</td><td>${num(r.m2)} ${t("m2")}</td></tr>`).join("")}</table>`,
+   pay:`<table><tr><td>${t("pay_res")}</td><td>${eur(20000)}</td></tr><tr><td>${t("pay_contract")}</td><td>${eur(u.price*.3)}</td></tr><tr><td>${t("pay_build")}</td><td>${eur(u.price*.2)}</td></tr><tr><td>${t("pay_done")}</td><td>${eur(u.price*.5)}</td></tr></table>`,
+   costs:`<table><tr><td>${t("cost_fee")}</td><td>${eur(u.fee_month)} ${t("per_month")}</td></tr><tr><td>${t("cost_tax")}</td><td>${eur(u.price*.0006)} ${t("per_month")}</td></tr></table>`,
+   incl:`<div class="list"><div class="li">${t("incl_kitchen")}</div><div class="li">${t("incl_parking")}</div><div class="li">${t("incl_storage")}</div></div>`};
+  if(!tabs[S.tab])S.tab="plan";
+  main.innerHTML=`<div class="two"><div><div class="pic" style="aspect-ratio:16/10"><img src="img/${sh[0]}.jpg" alt="${D(sh[1])}"><div class="cap">${D(sh[1])}${u.id=="3C"?"":t("shown3c")}</div></div>
+  <div class="thumbs">${SHOTS.map((s,i)=>`<button class="${i==S.shot?"on":""}" onclick="S.shot=${i};draw()" aria-label="${D(s[1])}"><img src="img/${s[0]}-s.jpg" alt=""></button>`).join("")}</div>
+  ${u.type=="T2"?"":`<p class="note">${t("int_note")}</p>`}</div>
+  <div><div class="row" style="align-items:center;margin-top:14px"><h1 class="serif" style="margin:0">${t("apt")} ${u.id}</h1><span class="st ${u.status}">${STN(u.status)}</span></div>
+  <p class="lead" style="margin-top:6px">${D(u.type_name)}${u.floor==5?"":" · "+FLN(u.floor)} · ${D(u.side)} · ${D(u.view)}</p>
+  <div class="facts"><div><b class="serif">${u.bed}</b><span>${t("beds")}</span></div><div><b class="serif">${u.bath}</b><span>${t("baths")}</span></div><div><b class="serif">${num(u.area)}</b><span>${t("m2")}</span></div><div><b class="serif">${num(u.terrace)}</b><span>${t("m2terr")}</span></div></div>
+  ${u.garden?`<p class="note" style="margin:0 0 8px">${t("garden",Math.round(u.garden))}</p>`:""}
   <div class="price serif">${eur(u.price)}</div>
-  <div class="row fill" style="margin-top:12px">${walkOk?`<a class="btn pri" href="tur/index.html">Тур по квартире</a><a class="btn" href="proba/index.html">Планировка в 3D</a>`:`<button class="btn pri" disabled>Тур скоро</button>`}<button class="btn" onclick="go('#/terrace/${u.id}')">Вид с террасы</button></div>
-  ${walkOk?(u.id=="3C"?"":`<p class="note">Тур и планировка в 3D показывают квартиру 3C: та же планировка «2 спальни».</p>`):`<p class="note">Прогулка в 3D пока сделана для планировки «2 спальни». Откройте 3C, чтобы пройтись.</p>`}
-  <div class="row" style="margin-top:10px"><button class="btn sm ${fav?"on":""}" onclick="tog('fav','${u.id}')">${fav?"♥ В избранном":"♡ В избранное"}</button><button class="btn sm ${cmp?"on":""}" onclick="tog('cmp','${u.id}')">${cmp?"✓ В сравнении":"Сравнить"}</button><button class="btn sm" onclick="share('${u.id}')">Поделиться</button></div>
-  <div class="card ${a?"agent":""}" style="margin-top:14px"><div style="font-size:12px;color:var(--mute)">${a?"Ваш агент":"Отдел продаж Eclipse"}</div><b>${a?esc(a):"Контакт появится здесь"}</b>
-  <div class="row fill" style="margin-top:8px"><button class="btn sm" onclick="go('#/contact/${u.id}')">Записаться на показ</button></div></div>
-  <div class="tabs">${Object.keys(tabs).map(t=>`<button class="${t==S.tab?"on":""}" onclick="S.tab='${t}';draw(true)">${t}</button>`).join("")}</div>${tabs[S.tab]}</div></div>${foot}`},
-"terrace":id=>{const u=U(id);if(!u)return go("#/building");crumbs([["Дом","#/building"],["Квартира "+u.id,"#/unit/"+u.id],["Терраса"]]);nav("#/building");
-  main.innerHTML=`<div class="pic" style="aspect-ratio:16/9;max-height:74vh"><img src="img/${VIEWS[S.time]}.jpg" alt="Вид с террасы, ${S.time.toLowerCase()}"><div class="cap">Вид на юг, к морю · ${S.time.toLowerCase()}</div></div>
-  <div class="row" style="margin-top:12px;align-items:center">${Object.keys(VIEWS).map(t=>`<button class="btn sm ${t==S.time?"on":""}" onclick="setTime('${t}')">${t}</button>`).join("")}</div>
-  <p class="lead" style="margin-top:12px">${FLN(u.floor)} · высота глаз ${num(u.eye)} м над морем · ${u.side.toLowerCase()}</p>
-  ${u.floor==3?`<p class="note">Линия горизонта, ширина моря и положение зданий взяты с настоящего рельефа и кадастра для высоты третьего этажа.</p>`:`<p class="note">Показан вид с третьего этажа. Для ${u.floor==5?"пентхауса":u.floor+"-го этажа"} он ещё не снят: ${u.floor>3?"с этой высоты моря видно больше.":"с этой высоты часть моря закрывают сосны."}</p>`}
-  <div class="row fill" style="margin-top:14px"><button class="btn" onclick="go('#/unit/${u.id}')">Назад к квартире</button><button class="btn pri" onclick="go('#/contact/${u.id}')">Записаться на показ</button></div>${foot}`},
-"list":()=>{crumbs([["Дом","#/building"],["Список"]]);nav("#/list");const cols=[["id","№"],["floor","Этаж"],["bed","Спальни"],["area","м²"],["terrace","Терраса"],["view","Вид"],["price","Цена"],["status","Статус"]];
+  <div class="row fill" style="margin-top:12px">${walkOk?`<a class="btn pri" href="${tourHref()}">${t("tour")}</a><a class="btn" href="${walkHref()}">${t("plan3d")}</a>`:`<button class="btn pri" disabled>${t("tour_soon")}</button>`}<button class="btn" onclick="go('#/terrace/${u.id}')">${t("terr_view")}</button></div>
+  ${walkOk?(u.id=="3C"?"":`<p class="note">${t("tour_note3c")}</p>`):`<p class="note">${t("tour_none")}</p>`}
+  <div class="row" style="margin-top:10px"><button class="btn sm ${fav?"on":""}" onclick="tog('fav','${u.id}')">${fav?t("fav_on"):t("fav_off")}</button><button class="btn sm ${cmp?"on":""}" onclick="tog('cmp','${u.id}')">${cmp?t("cmp_on"):t("cmp_off")}</button><button class="btn sm" onclick="share('${u.id}')">${t("share")}</button></div>
+  <div class="card ${a?"agent":""}" style="margin-top:14px"><div style="font-size:12px;color:var(--mute)">${a?t("your_agent"):t("sales")}</div><b>${a?esc(a):t("contact_ph")}</b>
+  <div class="row fill" style="margin-top:8px"><button class="btn sm" onclick="go('#/contact/${u.id}')">${t("book")}</button></div></div>
+  <div class="tabs">${Object.keys(tabs).map(k=>`<button class="${k==S.tab?"on":""}" onclick="S.tab='${k}';draw(true)">${t("tab_"+k)}</button>`).join("")}</div>${tabs[S.tab]}</div></div>${foot()}`},
+"terrace":id=>{const u=U(id);if(!u)return go("#/building");crumbs([[t("nav_building"),"#/building"],[t("apt")+" "+u.id,"#/unit/"+u.id],[t("terrace")]]);nav("#/building");const tm=low(t("t_"+S.time));
+  main.innerHTML=`<div class="pic" style="aspect-ratio:16/9;max-height:74vh"><video src="vid/v/${S.time}.mp4" poster="img/${VIEWS[S.time]}.jpg" autoplay loop muted playsinline aria-label="${t("terr_alt",tm)}"></video><div class="cap">${t("terr_cap",tm)}</div></div>
+  <div class="row" style="margin-top:12px;align-items:center">${Object.keys(VIEWS).map(k=>`<button class="btn sm ${k==S.time?"on":""}" onclick="setTime('${k}')">${t("t_"+k)}</button>`).join("")}<span class="sp"></span><a class="btn sm" href="vid/index.html?lang=${LANG}&t=${S.time}">${t("fullscreen")}</a></div>
+  <p class="lead" style="margin-top:12px">${t("terr_lead",FLN(u.floor),num(u.eye),low(D(u.side)))}</p>
+  <p class="note">${u.floor==3?t("terr_note3"):t("terr_noteX",u.floor)}</p>
+  <div class="row fill" style="margin-top:14px"><button class="btn" onclick="go('#/unit/${u.id}')">${t("back_apt")}</button><button class="btn pri" onclick="go('#/contact/${u.id}')">${t("book")}</button></div>${foot()}`},
+"list":()=>{crumbs([[t("nav_building"),"#/building"],[t("nav_list")]]);nav("#/list");const cols=[["id",t("c_no")],["floor",t("c_floor")],["bed",t("c_beds")],["area",t("m2")],["terrace",t("c_terr")],["view",t("c_view")],["price",t("c_price")],["status",t("c_status")]];
   const rows=[...UNITS].sort((a,b)=>(a[S.sort]>b[S.sort]?1:a[S.sort]<b[S.sort]?-1:0)*S.dir);
-  main.innerHTML=`<h2 class="serif">Все квартиры</h2>${fbar()}<div class="scroll"><table><tr>${cols.map(([c,n])=>`<th onclick="S.dir=S.sort=='${c}'?-S.dir:1;S.sort='${c}';draw(true)">${n}${S.sort==c?(S.dir>0?" ↑":" ↓"):""}</th>`).join("")}</tr>
-  ${rows.map(u=>`<tr class="rowlink ${active()&&!pass(u)?"dim":""}" onclick="go('#/unit/${u.id}')"><td><b>${u.id}</b></td><td>${u.floor==5?"ПХ":u.floor}</td><td>${u.bed}</td><td>${num(u.area)}</td><td>${num(u.terrace)}</td><td>${u.view}</td><td>${eur(u.price)}</td><td>${STN[u.status]}</td></tr>`).join("")}</table></div>
-  <p class="note">Нажмите на заголовок столбца, чтобы отсортировать. Нажмите на строку, чтобы открыть квартиру.</p>${foot}`},
-"fav":()=>{crumbs([["Избранное"]]);nav("#/fav");const f=S.fav.map(U).filter(Boolean),c=S.cmp.map(U).filter(Boolean);
-  main.innerHTML=`<h2 class="serif">Избранное</h2>${f.length?`<div class="list">${f.map(u=>`<button class="li" onclick="go('#/unit/${u.id}')"><span class="t"><b>${u.id}</b> · ${u.type_name}<div class="m">${FLN(u.floor)} · ${u.view}</div></span><b>${eur(u.price)}</b></button>`).join("")}</div>`:`<p class="lead">Пока пусто. Откройте квартиру и нажмите «В избранное».</p>`}
-  <h3>Сравнение</h3>${c.length?`<div class="scroll"><table><tr><th></th>${c.map(u=>`<th>${u.id}</th>`).join("")}</tr>${[["Этаж",u=>FLN(u.floor)],["Спальни",u=>u.bed],["Площадь",u=>num(u.area)+" м²"],["Терраса",u=>num(u.terrace)+" м²"],["Вид",u=>u.view],["Цена",u=>eur(u.price)],["В месяц",u=>eur(u.fee_month)],["Статус",u=>STN[u.status]]].map(([n,fn])=>`<tr><td>${n}</td>${c.map(u=>`<td>${fn(u)}</td>`).join("")}</tr>`).join("")}</table></div>`:`<p class="lead">Добавьте до трёх квартир кнопкой «Сравнить».</p>`}
-  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">Выбрать квартиру</button></div>${foot}`},
-"more":()=>{crumbs([["Ещё"]]);nav("#/more");main.innerHTML=`<h2 class="serif">Ещё</h2><div class="list"><button class="li" onclick="go('#/contact')"><span class="t">Связаться</span></button><button class="li" onclick="go('#/dev')"><span class="t">Для девелопера<div class="m">Карта спроса, ссылка агента</div></span></button><a class="li" href="plans/razrez.svg" target="_blank"><span class="t">Разрез дома по склону</span></a><a class="li" href="tur/index.html"><span class="t">Тур по квартире 3C<div class="m">Гостиная, кухня, спальни, ванная, терраса</div></span></a><a class="li" href="proba/index.html"><span class="t">Прогулка по квартире 3C<div class="m">Серая проба в 3D</div></span></a></div>${foot}`},
-"dev":()=>{crumbs([["Ещё","#/more"],["Для девелопера"]]);nav("#/more");const V=u=>20+((u.floor*37+u.x0*13+u.area*3)%97|0)+(u.floor==5?60:0),mx=Math.max(...UNITS.map(V));
-  main.innerHTML=`<h2 class="serif">Для девелопера</h2><p class="lead">Что вы видите, пока покупатели смотрят дом. Цифры на этом экране демонстрационные.</p>
-  <h3>Карта спроса: просмотры за 30 дней</h3><div class="card"><div class="bld">${[5,4,3,2,1].map(f=>`<div class="fl f${f}"><span class="lab">${f==5?"ПХ":f+" эт"}</span><div class="us">${UNITS.filter(u=>u.floor==f).map(u=>`<button class="u" style="flex:${DOM.types[u.type].W};background:color-mix(in srgb,var(--bronze) ${Math.round(8+82*V(u)/mx)}%,var(--card))" onclick="go('#/unit/${u.id}')"><b>${u.id}</b><span>${V(u)}</span></button>`).join("")}</div></div>`).join("")}</div></div>
-  <h3>Самые просматриваемые</h3><div class="scroll"><table><tr><th>№</th><th>Просмотры</th><th>В избранном</th><th>Сравнения</th><th>Ссылки</th></tr>${[...UNITS].sort((a,b)=>V(b)-V(a)).slice(0,6).map(u=>`<tr><td><b>${u.id}</b></td><td>${V(u)}</td><td>${Math.round(V(u)/6)}</td><td>${Math.round(V(u)/9)}</td><td>${Math.round(V(u)/14)}</td></tr>`).join("")}</table></div>
-  <h3>Ссылка агента</h3><div class="card"><label class="f" style="margin-top:0">Имя и телефон агента</label><input type="text" id="ag" placeholder="Например: Анна, +34 600 000 000"><div class="row fill" style="margin-top:8px"><button class="btn" onclick="const v=$('#ag').value.trim();if(v)location.hash='#/unit/3C?agent='+encodeURIComponent(v)">Открыть квартиру 3C с контактами агента</button></div><p class="note">Покупатель по такой ссылке видит контакты агента, а не отдела продаж.</p></div>${foot}`},
-"contact":id=>{crumbs([["Связаться"]]);nav("#/more");const a=agent();main.innerHTML=`<h2 class="serif">Связаться</h2>${id&&U(id)?`<p class="lead">Квартира ${id} уже указана в заявке.</p>`:""}<div class="card ${a?"agent":""}"><div style="font-size:12px;color:var(--mute)">${a?"Ваш агент":"Отдел продаж Eclipse"}</div><b>${a?esc(a):"Контакт появится здесь"}</b></div>
-  <h3>Запись на показ</h3><label class="f">Имя</label><input type="text"><label class="f">Телефон или почта</label><input type="text"><label class="f">Удобное время</label><input type="text">
-  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="msg('Это концепт: заявка никуда не отправляется.')">Отправить</button></div>${foot}`}
+  main.innerHTML=`<h2 class="serif">${t("all_apts")}</h2>${fbar()}<div class="scroll"><table><tr>${cols.map(([c,n])=>`<th onclick="S.dir=S.sort=='${c}'?-S.dir:1;S.sort='${c}';draw(true)">${n}${S.sort==c?(S.dir>0?" ↑":" ↓"):""}</th>`).join("")}</tr>
+  ${rows.map(u=>`<tr class="rowlink ${active()&&!pass(u)?"dim":""}" onclick="go('#/unit/${u.id}')"><td><b>${u.id}</b></td><td>${u.floor==5?t("ph"):u.floor}</td><td>${u.bed}</td><td>${num(u.area)}</td><td>${num(u.terrace)}</td><td>${D(u.view)}</td><td>${eur(u.price)}</td><td>${STN(u.status)}</td></tr>`).join("")}</table></div>
+  <p class="note">${t("list_note")}</p>${foot()}`},
+"fav":()=>{crumbs([[t("nav_fav")]]);nav("#/fav");const f=S.fav.map(U).filter(Boolean),c=S.cmp.map(U).filter(Boolean);
+  main.innerHTML=`<h2 class="serif">${t("nav_fav")}</h2>${f.length?`<div class="list">${f.map(u=>`<button class="li" onclick="go('#/unit/${u.id}')"><span class="t"><b>${u.id}</b> · ${D(u.type_name)}<div class="m">${FLN(u.floor)} · ${D(u.view)}</div></span><b>${eur(u.price)}</b></button>`).join("")}</div>`:`<p class="lead">${t("fav_empty")}</p>`}
+  <h3>${t("compare_h")}</h3>${c.length?`<div class="scroll"><table><tr><th></th>${c.map(u=>`<th>${u.id}</th>`).join("")}</tr>${[[t("c_floor"),u=>FLN(u.floor)],[t("c_beds"),u=>u.bed],[t("c_area"),u=>num(u.area)+" "+t("m2")],[t("c_terr"),u=>num(u.terrace)+" "+t("m2")],[t("c_view"),u=>D(u.view)],[t("c_price"),u=>eur(u.price)],[t("c_month"),u=>eur(u.fee_month)],[t("c_status"),u=>STN(u.status)]].map(([n,fn])=>`<tr><td>${n}</td>${c.map(u=>`<td>${fn(u)}</td>`).join("")}</tr>`).join("")}</table></div>`:`<p class="lead">${t("cmp_empty")}</p>`}
+  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="go('#/building')">${t("choose")}</button></div>${foot()}`},
+"more":()=>{crumbs([[t("nav_more")]]);nav("#/more");main.innerHTML=`<h2 class="serif">${t("nav_more")}</h2><div class="list"><button class="li" onclick="go('#/contact')"><span class="t">${t("contact")}</span></button><button class="li" onclick="go('#/dev')"><span class="t">${t("dev")}<div class="m">${t("dev_sub")}</div></span></button><a class="li" href="${PL()}razrez.svg" target="_blank"><span class="t">${t("section")}</span></a><a class="li" href="${tourHref()}"><span class="t">${t("tour3c")}<div class="m">${t("tour_sub")}</div></span></a><a class="li" href="${walkHref()}"><span class="t">${t("walk3c")}<div class="m">${t("walk_sub")}</div></span></a></div>${foot()}`},
+"dev":()=>{crumbs([[t("nav_more"),"#/more"],[t("dev")]]);nav("#/more");const V=u=>20+((u.floor*37+u.x0*13+u.area*3)%97|0)+(u.floor==5?60:0),mx=Math.max(...UNITS.map(V));
+  main.innerHTML=`<h2 class="serif">${t("dev")}</h2><p class="lead">${t("dev_lead")}</p>
+  <h3>${t("dev_map")}</h3><div class="card"><div class="bld">${[5,4,3,2,1].map(f=>`<div class="fl f${f}"><span class="lab">${FLS(f)}</span><div class="us">${UNITS.filter(u=>u.floor==f).map(u=>`<button class="u" style="flex:${DOM.types[u.type].W};background:color-mix(in srgb,var(--bronze) ${Math.round(8+82*V(u)/mx)}%,var(--card))" onclick="go('#/unit/${u.id}')"><b>${u.id}</b><span>${V(u)}</span></button>`).join("")}</div></div>`).join("")}</div></div>
+  <h3>${t("dev_top")}</h3><div class="scroll"><table><tr><th>${t("c_no")}</th><th>${t("d_views")}</th><th>${t("d_fav")}</th><th>${t("d_cmp")}</th><th>${t("d_links")}</th></tr>${[...UNITS].sort((a,b)=>V(b)-V(a)).slice(0,6).map(u=>`<tr><td><b>${u.id}</b></td><td>${V(u)}</td><td>${Math.round(V(u)/6)}</td><td>${Math.round(V(u)/9)}</td><td>${Math.round(V(u)/14)}</td></tr>`).join("")}</table></div>
+  <h3>${t("agent_link")}</h3><div class="card"><label class="f" style="margin-top:0">${t("agent_label")}</label><input type="text" id="ag" placeholder="${t("agent_ph")}"><div class="row fill" style="margin-top:8px"><button class="btn" onclick="const v=$('#ag').value.trim();if(v)location.hash='#/unit/3C?agent='+encodeURIComponent(v)">${t("agent_btn")}</button></div><p class="note">${t("agent_note")}</p></div>${foot()}`},
+"contact":id=>{crumbs([[t("contact")]]);nav("#/more");const a=agent();main.innerHTML=`<h2 class="serif">${t("contact")}</h2>${id&&U(id)?`<p class="lead">${t("contact_in",id)}</p>`:""}<div class="card ${a?"agent":""}"><div style="font-size:12px;color:var(--mute)">${a?t("your_agent"):t("sales")}</div><b>${a?esc(a):t("contact_ph")}</b></div>
+  <h3>${t("book_h")}</h3><label class="f">${t("f_name")}</label><input type="text"><label class="f">${t("f_phone")}</label><input type="text"><label class="f">${t("f_time")}</label><input type="text">
+  <div class="row fill" style="margin-top:14px"><button class="btn pri" onclick="msg(t('concept_msg'))">${t("send")}</button></div>${foot()}`}
 };
-function tog(k,id){const a=S[k],i=a.indexOf(id);if(i>=0)a.splice(i,1);else{if(k=="cmp"&&a.length>=3)return msg("В сравнении не больше трёх квартир.");a.push(id)}save();draw(true)}
-function share(id){const url=location.href.split("#")[0]+"#/unit/"+id+q();(navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>msg("Ссылка на квартиру "+id+" скопирована."),()=>msg(url))}
+function tog(k,id){const a=S[k],i=a.indexOf(id);if(i>=0)a.splice(i,1);else{if(k=="cmp"&&a.length>=3)return msg(t("cmp_max"));a.push(id)}save();draw(true)}
+function share(id){const url=location.href.split("#")[0]+"#/unit/"+id+q();(navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>msg(t("copied",id)),()=>msg(url))}
 function setNight(n){document.body.classList.toggle("night",n)}
-function setTime(t){S.time=t;setNight(t=="Ночь");draw(true)}
+function setTime(k){S.time=k;setNight(k=="night");draw(true)}
 function sheet(h){$("#sheet").innerHTML=h;$("#veil").classList.add("on")}
 function closeSheet(){$("#veil").classList.remove("on")}
-function msg(t){sheet(`<h2 class="serif">Eclipse<span class="sp"></span><button class="btn sm" onclick="closeSheet()">✕</button></h2><p class="lead" style="word-break:break-word">${esc(t)}</p>`)}
-function filter(){sheet(`<h2 class="serif">Фильтр<span class="sp"></span><button class="btn sm" onclick="closeSheet()">✕</button></h2>
-  <label class="f">Спальни, не меньше</label><div class="row">${[0,2,3,4].map(n=>`<button class="btn sm ${S.beds==n?"on":""}" onclick="S.beds=${n};filter();draw(true)">${n||"Любые"}</button>`).join("")}</div>
-  <label class="f">Бюджет до: <b>${S.max?eur(S.max):"не важно"}</b></label><input type="range" min="0" max="8000000" step="250000" value="${S.max}" oninput="S.max=+this.value;this.previousElementSibling.querySelector('b').textContent=S.max?eur(S.max):'не важно';draw(true);cnt()">
-  <label class="f">Дополнительно</label><div class="row"><button class="btn sm ${S.sea?"on":""}" onclick="S.sea=!S.sea;filter();draw(true)">Открытый вид на море</button><button class="btn sm ${S.free?"on":""}" onclick="S.free=!S.free;filter();draw(true)">Только свободные</button></div>
-  <div class="row fill" style="margin-top:18px"><button class="btn" onclick="S.beds=0;S.max=0;S.sea=S.free=false;filter();draw(true)">Сбросить</button><button class="btn pri" id="cnt" onclick="closeSheet()">Показать ${UNITS.filter(pass).length}</button></div>`)}
-function cnt(){const b=$("#cnt");if(b)b.textContent="Показать "+UNITS.filter(pass).length}
+function msg(s){sheet(`<h2 class="serif">Eclipse<span class="sp"></span><button class="btn sm" onclick="closeSheet()">✕</button></h2><p class="lead" style="word-break:break-word">${esc(s)}</p>`)}
+function filter(){sheet(`<h2 class="serif">${t("filter")}<span class="sp"></span><button class="btn sm" onclick="closeSheet()">✕</button></h2>
+  <label class="f">${t("f_beds")}</label><div class="row">${[0,2,3,4].map(n=>`<button class="btn sm ${S.beds==n?"on":""}" onclick="S.beds=${n};filter();draw(true)">${n||t("any")}</button>`).join("")}</div>
+  <label class="f">${t("budget")} <b>${S.max?eur(S.max):t("nolimit")}</b></label><input type="range" min="0" max="8000000" step="250000" value="${S.max}" oninput="S.max=+this.value;this.previousElementSibling.querySelector('b').textContent=S.max?eur(S.max):t('nolimit');draw(true);cnt()">
+  <label class="f">${t("extra")}</label><div class="row"><button class="btn sm ${S.sea?"on":""}" onclick="S.sea=!S.sea;filter();draw(true)">${t("sea_open")}</button><button class="btn sm ${S.free?"on":""}" onclick="S.free=!S.free;filter();draw(true)">${t("only_free")}</button></div>
+  <div class="row fill" style="margin-top:18px"><button class="btn" onclick="S.beds=0;S.max=0;S.sea=S.free=false;filter();draw(true)">${t("reset")}</button><button class="btn pri" id="cnt" onclick="closeSheet()">${t("show",UNITS.filter(pass).length)}</button></div>`)}
+function cnt(){const b=$("#cnt");if(b)b.textContent=t("show",UNITS.filter(pass).length)}
 function draw(keep){const y=scrollY,h=location.hash.replace(/^#\/?/,"").split("?")[0].split("/");(R[h[0]]||R[""])(h[1]);if(keep)scrollTo(0,y)}
-$("#ecl").onclick=()=>{const n=!night();setNight(n);S.time=n?"Ночь":"Закат";const h=location.hash;if(/terrace|building/.test(h))draw(true)};
+$("#ecl").onclick=()=>{const n=!night();setNight(n);S.time=n?"night":"sunset";const h=location.hash;if(/terrace|building/.test(h))draw(true)};
 $("#veil").onclick=e=>{if(e.target.id=="veil")closeSheet()};
 addEventListener("hashchange",()=>{closeSheet();S.shot=0;draw();scrollTo(0,0)});
-Promise.all(["data/kvartiry.json","data/dom.json","data/mesta.json"].map(u=>fetch(u).then(r=>{if(!r.ok)throw new Error(u+" "+r.status);return r.json()}))).then(([u,d,m])=>{UNITS=u;DOM=d;for(const p of m)(PLACES[p.cat]=PLACES[p.cat]||[]).push(p);for(const c in PLACES)PLACES[c].sort((a,b)=>a.car_min-b.car_min||a.walk_min-b.walk_min);draw()}).catch(e=>{main.innerHTML=`<p class="lead">Данные не загрузились: ${esc(e.message)}. Сайт нужно открывать через сервер, а не двойным щелчком по файлу.</p>`});
+chrome();main.innerHTML=`<p class="lead">${t("loading")}</p>`;
+Promise.all(["data/kvartiry.json","data/dom.json","data/mesta.json"].map(u=>fetch(u).then(r=>{if(!r.ok)throw new Error(u+" "+r.status);return r.json()}))).then(([u,d,m])=>{UNITS=u;DOM=d;for(const p of m)(PLACES[p.cat]=PLACES[p.cat]||[]).push(p);for(const c in PLACES)PLACES[c].sort((a,b)=>a.car_min-b.car_min||a.walk_min-b.walk_min);draw()}).catch(e=>{main.innerHTML=`<p class="lead">${esc(t("load_err",e.message))}</p>`});
 </script>
 </body>
 </html>

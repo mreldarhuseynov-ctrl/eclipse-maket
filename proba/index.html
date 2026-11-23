@@ -56,6 +56,29 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 const UNIT = { x0: 21, W: 9, D: 15, level: 37.4, ter: 3.5 };
 const ANG = 9.12 * Math.PI / 180;          // поворот корпуса относительно востока
 const H = 2.9, T = 0.14, EYE = 1.62, RAD = 0.24;
+/* языки: тот же выбор, что на основном сайте (ссылка ?lang= или память браузера) */
+const WORDS = {
+  en: { 'Гостиная': 'Living room', 'Спальня 1': 'Bedroom 1', 'Спальня 2': 'Bedroom 2', 'Ванная 1': 'Bathroom 1', 'Ванная 2': 'Bathroom 2', 'Галерея': 'Gallery', 'Кухня': 'Kitchen', 'Прихожая': 'Entrance hall', 'Терраса': 'Terrace',
+        'Дверь': 'Door', 'Дверь на террасу': 'Terrace door', 'Открыть: ': 'Open: ', 'Закрыть: ': 'Close: ', 'Открыть дверь': 'Open the door', 'На террасу': 'To the terrace', 'В прихожую': 'To the entrance',
+        'Утро': 'Morning', 'Закат': 'Sunset', 'Ночь': 'Night', 'квартира 3C · проба · ': 'apartment 3C · trial · ', ' кадр/с': ' fps', 'местность не загрузилась: ': 'the terrain did not load: ',
+        'title': 'Eclipse — walkthrough trial, apartment 3C',
+        'touch': 'Left thumb to walk, right thumb to look. Tap a door to open it.', 'keys': 'W A S D to walk, hold the mouse button and drag to look, E to open a door.' },
+  es: { 'Гостиная': 'Salón', 'Спальня 1': 'Dormitorio 1', 'Спальня 2': 'Dormitorio 2', 'Ванная 1': 'Baño 1', 'Ванная 2': 'Baño 2', 'Галерея': 'Galería', 'Кухня': 'Cocina', 'Прихожая': 'Recibidor', 'Терраса': 'Terraza',
+        'Дверь': 'Puerta', 'Дверь на террасу': 'Puerta de la terraza', 'Открыть: ': 'Abrir: ', 'Закрыть: ': 'Cerrar: ', 'Открыть дверь': 'Abrir la puerta', 'На террасу': 'A la terraza', 'В прихожую': 'Al recibidor',
+        'Утро': 'Mañana', 'Закат': 'Atardecer', 'Ночь': 'Noche', 'квартира 3C · проба · ': 'apartamento 3C · prueba · ', ' кадр/с': ' fps', 'местность не загрузилась: ': 'no se ha cargado el terreno: ',
+        'title': 'Eclipse — paseo de prueba, apartamento 3C',
+        'touch': 'Pulgar izquierdo para caminar, derecho para mirar. Toque una puerta para abrirla.', 'keys': 'W A S D para caminar, mantenga pulsado el ratón y arrastre para mirar, E para abrir una puerta.' },
+  ru: { 'title': 'Eclipse — проба прогулки, квартира 3C',
+        'touch': 'Левый палец — идти, правый — смотреть. Нажмите на дверь, чтобы открыть.', 'keys': 'W A S D — идти, мышь с зажатой кнопкой — смотреть, E — открыть дверь.' }
+};
+const LANG = (() => { const m = location.search.match(/[?&]lang=(ru|en|es)/); if (m) return m[1];
+  try { if (WORDS[localStorage.eclLang]) return localStorage.eclLang; } catch (e) {}
+  const n = (navigator.language || 'en').slice(0, 2).toLowerCase(); return WORDS[n] ? n : 'en'; })();
+const W = s => WORDS[LANG][s] ?? s;
+document.documentElement.lang = LANG; document.title = W('title');
+document.getElementById('loadmsg').textContent = { ru: 'загрузка пробы…', en: 'loading…', es: 'cargando…' }[LANG];
+document.querySelectorAll('#time button, #toTerrace, #act, #toStart').forEach(e => { e.textContent = W(e.textContent); });
+{ const sp = document.querySelector('.pill.title > span'); if (sp && sp.firstChild && sp.firstChild.nodeType === 3) sp.firstChild.textContent = W(sp.firstChild.textContent); }
 const ROOMS = [["Гостиная",0,0,5.2,6.2],["Спальня 1",5.2,0,3.8,4.2],["Ванная 1",5.2,4.2,3.8,2],["Галерея",0,6.2,9,1.4],["Кухня",0,7.6,3.2,4],["Ванная 2",0,11.6,3.2,3.4],["Спальня 2",3.2,7.6,3,7.4],["Прихожая",6.2,7.6,2.8,1.4],["Терраса",0,-3.5,9,3.5]];
 /* квартира: x вдоль фасада, y к северу. Сцена: X = x, Z = -y, юг (море) = +Z */
 const P = (x, y, h = 0) => new THREE.Vector3(x, h, -y);
@@ -283,7 +306,7 @@ function blocked(x, z) {
 const mapEl = document.getElementById('map'), k = 6;
 mapEl.innerHTML = `<svg viewBox="-1 -1 ${9 * k + 2} ${18.5 * k + 2}">${ROOMS.map(([n, x, y, w, h], i) => `<rect data-i="${i}" x="${x * k}" y="${(15 - y - h) * k}" width="${w * k}" height="${h * k}" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.6)" stroke-width=".8"/>`).join('')}<rect x="${6.2 * k}" y="0" width="${2.8 * k}" height="${6 * k}" fill="rgba(255,255,255,.35)"/><circle id="me" r="3.2" fill="#fff"/><path id="dir" d="M0-7 L3 0 L-3 0Z" fill="#fff"/></svg>`;
 const me = mapEl.querySelector('#me'), dirEl = mapEl.querySelector('#dir'), rects = [...mapEl.querySelectorAll('rect[data-i]')], roomEl = document.getElementById('room'), actBtn = document.getElementById('act'), hint = document.getElementById('hint');
-hint.textContent = mobile ? 'Левый палец — идти, правый — смотреть. Нажмите на дверь, чтобы открыть.' : 'W A S D — идти, мышь с зажатой кнопкой — смотреть, E — открыть дверь.';
+hint.textContent = mobile ? W('touch') : W('keys');
 setTimeout(() => hint.style.opacity = 0, 9000);
 
 /* ---------- цикл ---------- */
@@ -298,11 +321,11 @@ function tick() {
       if (d.type === 'hinge') d.g.rotation.y = e * 1.62 * d.dir; else d.g.position.x = d.x0 - e * (d.w - 0.08); } }
   camera.position.copy(pos); camera.rotation.set(0, 0, 0, 'YXZ'); camera.rotation.y = yaw; camera.rotation.x = pitch;
   const ux = pos.x, uy = -pos.z, ri = ROOMS.findIndex(([n, x, y, w, h]) => ux >= x && ux <= x + w && uy >= y && uy <= y + h);
-  if (ri >= 0) roomEl.textContent = ROOMS[ri][0]; rects.forEach((r, i) => r.setAttribute('fill', i === ri ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.14)'));
+  if (ri >= 0) roomEl.textContent = W(ROOMS[ri][0]); rects.forEach((r, i) => r.setAttribute('fill', i === ri ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.14)'));
   me.setAttribute('cx', ux * k); me.setAttribute('cy', (15 - uy) * k); dirEl.setAttribute('transform', `translate(${ux * k},${(15 - uy) * k}) rotate(${-yaw * 180 / Math.PI})`);
-  const nd = nearDoor(); actBtn.hidden = !nd; if (nd) actBtn.textContent = (nd.target ? 'Закрыть: ' : 'Открыть: ') + nd.name;
+  const nd = nearDoor(); actBtn.hidden = !nd; if (nd) actBtn.textContent = W(nd.target ? 'Закрыть: ' : 'Открыть: ') + W(nd.name);
   renderer.render(scene, camera);
-  frames++; ft += dt; if (ft > 1) { fpsEl.textContent = Math.round(frames / ft) + ' кадр/с'; frames = 0; ft = 0; }
+  frames++; ft += dt; if (ft > 1) { fpsEl.textContent = Math.round(frames / ft) + W(' кадр/с'); frames = 0; ft = 0; }
   requestAnimationFrame(tick);
 }
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.fov = mobile && innerHeight > innerWidth ? 78 : 68; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
@@ -311,7 +334,7 @@ const hp = location.hash.slice(1).split(',');
 if (hp.length >= 2 && !isNaN(+hp[0])) { pos.copy(P(+hp[0], +hp[1], EYE)); if (hp[2]) yaw = +hp[2] * Math.PI / 180; if (hp[3]) pitch = +hp[3] * Math.PI / 180; if (+hp[1] < 0.5) doors.find(d => d.type === 'slide').open = doors.find(d => d.type === 'slide').target = 1; }
 addEventListener('hashchange', () => location.reload());
 setTime(TIMES[hp[4]] ? hp[4] : 'sunset');
-loadSite().catch(e => { document.getElementById('loadmsg').textContent = 'местность не загрузилась: ' + e.message; }).finally(() => { document.getElementById('load').style.display = 'none'; });
+loadSite().catch(e => { document.getElementById('loadmsg').textContent = W('местность не загрузилась: ') + e.message; }).finally(() => { document.getElementById('load').style.display = 'none'; });
 window.__eclipse = { pos, doors, colliders, setTime, blocked, get yaw() { return yaw; }, set yaw(v) { yaw = v; }, set pitch(v) { pitch = v; }, renderer, P };
 tick();
 </script>

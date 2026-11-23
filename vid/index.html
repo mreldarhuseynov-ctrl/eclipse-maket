@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Eclipse — живой вид с террасы</title>
+<style>
+  :root { --ink: #f4ede2; --bronze: #c9a574; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #14110e; color: var(--ink); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; overflow: hidden; }
+  /* кадр во всю высоту: на телефоне он шире экрана, и его можно тянуть пальцем влево и вправо */
+  .pan { position: fixed; inset: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .pan::-webkit-scrollbar { display: none; }
+  .wide { position: relative; height: 100%; aspect-ratio: 16 / 9; min-width: 100%; }
+  video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s ease; }
+  video.on { opacity: 1; }
+  .top { position: fixed; left: 0; right: 0; top: 0; padding: max(14px, env(safe-area-inset-top)) 18px 0; display: flex; justify-content: space-between; align-items: baseline; text-shadow: 0 1px 12px rgba(0, 0, 0, .6); pointer-events: none; }
+  .brand { letter-spacing: .34em; font-size: 13px; color: inherit; text-decoration: none; pointer-events: auto; padding: 8px 8px 8px 0; }
+  .where { font-size: 13px; opacity: .9; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 14px max(16px, env(safe-area-inset-bottom)); display: flex; gap: 8px; justify-content: center; }
+  button { font: inherit; font-size: 14px; color: var(--ink); background: rgba(20, 17, 14, .5); border: 1px solid rgba(201, 165, 116, .55); border-radius: 999px; padding: 10px 16px; min-height: 44px; cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  button.on, button:hover, button:focus-visible { background: var(--bronze); color: #1b1611; outline: none; }
+  .hint { position: fixed; left: 0; right: 0; bottom: 74px; text-align: center; font-size: 12px; opacity: .8; text-shadow: 0 1px 10px rgba(0, 0, 0, .7); pointer-events: none; transition: opacity .8s ease; }
+  .hint.off { opacity: 0; }
+</style>
+</head>
+<body>
+<div class="pan" id="pan"><div class="wide" id="wide"></div></div>
+<div class="top"><a class="brand" id="home" href="../index.html#/unit/3C">← ECLIPSE</a><span class="where" id="where"></span></div>
+<div class="hint" id="hint"></div>
+<div class="bar" id="bar"></div>
+<script>
+/* языки: тот же выбор, что на основном сайте (ссылка ?lang= или память браузера) */
+const T = {
+  ru: { title: 'Eclipse — живой вид с террасы', where: 'Квартира 3C · вид с террасы', morning: 'Утро', sunset: 'Закат', night: 'Ночь', hint: 'Тяните вид влево и вправо', home: 'Назад к квартире 3C' },
+  en: { title: 'Eclipse — live terrace view', where: 'Apartment 3C · terrace view', morning: 'Morning', sunset: 'Sunset', night: 'Night', hint: 'Drag the view left and right', home: 'Back to apartment 3C' },
+  es: { title: 'Eclipse — vistas en vivo desde la terraza', where: 'Apartamento 3C · vistas desde la terraza', morning: 'Mañana', sunset: 'Atardecer', night: 'Noche', hint: 'Arrastre la vista a izquierda y derecha', home: 'Volver al apartamento 3C' }
+};
+function pickLang() { const m = location.search.match(/[?&]lang=(ru|en|es)/); if (m) return m[1];
+  try { if (T[localStorage.eclLang]) return localStorage.eclLang; } catch (e) {}
+  const n = (navigator.language || 'en').slice(0, 2).toLowerCase(); return T[n] ? n : 'en'; }
+const LANG = pickLang(), L = T[LANG];
+document.documentElement.lang = LANG; document.title = L.title;
+document.getElementById('where').textContent = L.where;
+const home = document.getElementById('home'); home.setAttribute('aria-label', L.home); home.href = '../index.html?lang=' + LANG + '#/unit/3C';
+
+const TIMES = ['morning', 'sunset', 'night'];
+const pan = document.getElementById('pan'), wide = document.getElementById('wide'), bar = document.getElementById('bar'), hint = document.getElementById('hint');
+const tm = (location.search.match(/[?&]t=(morning|sunset|night)/) || [])[1] || 'sunset';
+const vids = {};
+/* ролик создаётся при первом показе, чтобы не грузить все три сразу */
+function video(t) { if (!vids[t]) { const v = document.createElement('video'); v.src = 'v/' + t + '.mp4'; v.poster = 'img/' + t + '.jpg'; v.loop = v.muted = v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto'; wide.appendChild(v); vids[t] = v; } return vids[t]; }
+function show(t) { const v = video(t); v.play().catch(() => {}); for (const k in vids) vids[k].classList.toggle('on', k === t);
+  setTimeout(() => { for (const k in vids) if (k !== t) vids[k].pause(); }, 1300);
+  bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === t)); }
+for (const t of TIMES) { const b = document.createElement('button'); b.dataset.t = t; b.textContent = L[t]; b.onclick = () => show(t); bar.appendChild(b); }
+show(tm);
+/* начинаем с середины вида; подсказка видна, только если кадр шире экрана */
+function centre() { pan.scrollLeft = (pan.scrollWidth - pan.clientWidth) / 2; const wider = pan.scrollWidth - pan.clientWidth > 20; hint.textContent = wider ? L.hint : ''; }
+addEventListener('load', centre); addEventListener('resize', centre); centre();
+pan.addEventListener('scroll', () => { if (Math.abs(pan.scrollLeft - (pan.scrollWidth - pan.clientWidth) / 2) > 30) hint.classList.add('off'); }, { passive: true });
+</script>
+</body>
+</html>
