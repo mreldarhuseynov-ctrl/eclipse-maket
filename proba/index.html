@@ -248,6 +248,8 @@ function setTime(k) {
    Серая местность южнее фасада отсечена; на севере (окна на Ла-Кончу) она остаётся. */
 renderer.localClippingEnabled = true;
 const southCut = [new THREE.Plane(new THREE.Vector3(0, 0, -1), -1.5)];
+const PANO = { sunset: true }, PANO_DEG = 167;   /* для каких времён суток есть панорамный ролик vid/v/pano-<время>.mp4 */
+let flatView, arcView;
 const liveVid = document.createElement('video');
 Object.assign(liveVid, { muted: true, loop: true, playsInline: true, preload: 'auto' }); liveVid.setAttribute('playsinline', ''); liveVid.setAttribute('muted', '');
 const liveTex = new THREE.VideoTexture(liveVid); liveTex.colorSpace = THREE.SRGBColorSpace;
@@ -258,10 +260,17 @@ const liveTex = new THREE.VideoTexture(liveVid); liveTex.colorSpace = THREE.SRGB
   const m = new THREE.MeshBasicMaterial({ map: liveTex, toneMapped: false, fog: false, side: THREE.DoubleSide });
   /* наклон общий для всех трёх частей, чтобы их края сходились без щели */
   const tilt = new THREE.Group(); tilt.rotation.x = 3 * Math.PI / 180; eye.add(tilt);
+  /* запасной вариант (утро и ночь, пока для них нет панорамы): плоский экран и его зеркальные копии по бокам */
+  flatView = new THREE.Group(); tilt.add(flatView);
   for (const k of [-1, 0, 1]) {
-    const yawG = new THREE.Group(); yawG.rotation.y = k * 2 * half; tilt.add(yawG);
+    const yawG = new THREE.Group(); yawG.rotation.y = k * 2 * half; flatView.add(yawG);
     const scr = new THREE.Mesh(new THREE.PlaneGeometry(vw, vh), m); scr.position.z = R; scr.rotation.y = Math.PI; if (k) scr.scale.x = -1; yawG.add(scr);
   }
+  /* основной вариант: цельная панорама 167° на дуге вокруг точки съёмки, без зеркал */
+  const panoTex = new THREE.VideoTexture(liveVid); panoTex.colorSpace = THREE.SRGBColorSpace; panoTex.wrapS = THREE.RepeatWrapping; panoTex.repeat.x = -1; panoTex.offset.x = 1;
+  const span = PANO_DEG * Math.PI / 180;
+  arcView = new THREE.Mesh(new THREE.CylinderGeometry(R, R, vh, 96, 1, true, -span / 2, span), new THREE.MeshBasicMaterial({ map: panoTex, toneMapped: false, fog: false, side: THREE.BackSide }));
+  tilt.add(arcView);
   /* земля под нижним краем экрана: видна, только если смотреть с края террасы круто вниз */
   const gndM = new THREE.MeshBasicMaterial({ color: 0x55663a, fog: false, toneMapped: false });
   const gnd = new THREE.Mesh(new THREE.CircleGeometry(2600, 48), gndM);
@@ -275,7 +284,7 @@ const liveTex = new THREE.VideoTexture(liveVid); liveTex.colorSpace = THREE.SRGB
     const a = px.getImageData(8, 0, 1, 1).data, b = px.getImageData(8, 8, 1, 1).data;
     domeM.color.setRGB(a[0] / 255, a[1] / 255, a[2] / 255, THREE.SRGBColorSpace); gndM.color.setRGB(b[0] / 255, b[1] / 255, b[2] / 255, THREE.SRGBColorSpace); } catch (e) {} }, 1000);
 }
-function liveView(k) { const src = '../vid/v/' + k + '.mp4'; if (liveVid.getAttribute('src') !== src) { liveVid.src = src; } liveVid.play().catch(() => {}); }
+function liveView(k) { const src = '../vid/v/' + (PANO[k] ? 'pano-' : '') + k + '.mp4'; arcView.visible = !!PANO[k]; flatView.visible = !PANO[k]; if (liveVid.getAttribute('src') !== src) { liveVid.src = src; } liveVid.play().catch(() => {}); }
 addEventListener('pointerdown', () => liveVid.play().catch(() => {}), { passive: true });
 
 async function loadSite() {
