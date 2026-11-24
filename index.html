@@ -160,7 +160,7 @@ ru:{title:"Eclipse — Золотая миля, Марбелья",concept:"ко�
  incl_kitchen:"Кухня с техникой",incl_parking:"Два места в паркинге",incl_storage:"Кладовая",
  shown3c:" · показана квартира 3C",shownPH1:" · показан пентхаус PH1",terr_notePH:"Вид с террасы пентхауса на закате. Горизонт и ширина моря взяты с настоящего рельефа для высоты пентхауса; сад и бассейн внизу нарисованы приблизительно.",int_note:"Интерьеры сняты в квартире 3C (2 спальни). Для этой планировки кадры ещё не сделаны: стиль и материалы те же.",
  beds:"спальни",baths:"ванные",m2terr:"м² терраса",garden:n=>`Собственный сад ${n} м² с бассейном.`,
- tour:"Тур по квартире",tourPH:"Тур по пентхаусу",tour_notePH:"Тур показывает пентхаус PH1: та же планировка, зеркально.",tourPH1:"Тур по пентхаусу PH1",tourPH_sub:"Гостиная, терраса с бассейном, кухня, спальня, ванная",plan3d:"Планировка в 3D",tour_soon:"Тур скоро",terr_view:"Вид с террасы",
+ tour:"Тур по квартире",tourPH:"Тур по пентхаусу",walkPH:"Прогулка в 3D",tour_notePH:"Тур показывает пентхаус PH1: та же планировка, зеркально.",tourPH1:"Тур по пентхаусу PH1",tourPH_sub:"Гостиная, терраса с бассейном, кухня, спальня, ванная",plan3d:"Планировка в 3D",tour_soon:"Тур скоро",terr_view:"Вид с террасы",
  tour_note3c:"Тур и планировка в 3D показывают квартиру 3C: та же планировка «2 спальни».",
  tour_none:"Тур пока сделан для планировки «2 спальни». Откройте 3C, чтобы пройтись.",
  fav_on:"♥ В избранном",fav_off:"♡ В избранное",cmp_on:"✓ В сравнении",cmp_off:"Сравнить",share:"Поделиться",
@@ -206,7 +206,7 @@ en:{title:"Eclipse — Golden Mile, Marbella",concept:"concept",dayNight:"Day an
  incl_kitchen:"Fitted kitchen with appliances",incl_parking:"Two parking spaces",incl_storage:"Storage room",
  shown3c:" · apartment 3C shown",shownPH1:" · penthouse PH1 shown",terr_notePH:"The view from the penthouse terrace at sunset. The horizon and the width of the sea come from real terrain data at penthouse height; the garden and pool below are drawn approximately.",int_note:"The interiors shown are from apartment 3C (2 bedrooms). Images for this layout have not been made yet; the style and materials are the same.",
  beds:"bedrooms",baths:"bathrooms",m2terr:"m² terrace",garden:n=>`Private garden of ${n} m² with a pool.`,
- tour:"Apartment tour",tourPH:"Penthouse tour",tour_notePH:"The tour shows penthouse PH1: the same layout, mirrored.",tourPH1:"Tour of penthouse PH1",tourPH_sub:"Living room, pool terrace, kitchen, bedroom, bathroom",plan3d:"Layout in 3D",tour_soon:"Tour coming soon",terr_view:"Terrace view",
+ tour:"Apartment tour",tourPH:"Penthouse tour",walkPH:"3D walk",tour_notePH:"The tour shows penthouse PH1: the same layout, mirrored.",tourPH1:"Tour of penthouse PH1",tourPH_sub:"Living room, pool terrace, kitchen, bedroom, bathroom",plan3d:"Layout in 3D",tour_soon:"Tour coming soon",terr_view:"Terrace view",
  tour_note3c:"The tour and the 3D layout show apartment 3C, which has the same 2-bedroom layout.",
  tour_none:"The tour is currently available for the 2-bedroom layout only. Open 3C to walk through it.",
  fav_on:"♥ Saved",fav_off:"♡ Save",cmp_on:"✓ Comparing",cmp_off:"Compare",share:"Share",
@@ -252,7 +252,7 @@ es:{title:"Eclipse — Milla de Oro, Marbella",concept:"concepto",dayNight:"Día
  incl_kitchen:"Cocina equipada con electrodomésticos",incl_parking:"Dos plazas de aparcamiento",incl_storage:"Trastero",
  shown3c:" · se muestra el apartamento 3C",shownPH1:" · se muestra el ático PH1",terr_notePH:"Vistas desde la terraza del ático al atardecer. El horizonte y la anchura del mar proceden del relieve real a la altura del ático; el jardín y la piscina de abajo están dibujados de forma aproximada.",int_note:"Los interiores corresponden al apartamento 3C (2 dormitorios). Aún no hay imágenes de esta tipología; el estilo y los materiales son los mismos.",
  beds:"dormitorios",baths:"baños",m2terr:"m² terraza",garden:n=>`Jardín privado de ${n} m² con piscina.`,
- tour:"Recorrido virtual",tourPH:"Recorrido por el ático",tour_notePH:"El recorrido muestra el ático PH1: la misma distribución, en espejo.",tourPH1:"Recorrido por el ático PH1",tourPH_sub:"Salón, terraza con piscina, cocina, dormitorio, baño",plan3d:"Plano en 3D",tour_soon:"Recorrido próximamente",terr_view:"Vistas",
+ tour:"Recorrido virtual",tourPH:"Recorrido por el ático",walkPH:"Paseo en 3D",tour_notePH:"El recorrido muestra el ático PH1: la misma distribución, en espejo.",tourPH1:"Recorrido por el ático PH1",tourPH_sub:"Salón, terraza con piscina, cocina, dormitorio, baño",plan3d:"Plano en 3D",tour_soon:"Recorrido próximamente",terr_view:"Vistas",
  tour_note3c:"El recorrido y la distribución en 3D muestran el apartamento 3C, con la misma tipología de 2 dormitorios.",
  tour_none:"El recorrido solo está disponible por ahora para la tipología de 2 dormitorios. Abra el 3C para recorrerlo.",
  fav_on:"♥ En favoritos",fav_off:"♡ Guardar",cmp_on:"✓ En comparación",cmp_off:"Comparar",share:"Compartir",
@@ -382,7 +382,7 @@ const R={
   <div class="facts"><div><b class="serif">${u.bed}</b><span>${t("beds")}</span></div><div><b class="serif">${u.bath}</b><span>${t("baths")}</span></div><div><b class="serif">${num(u.area)}</b><span>${t("m2")}</span></div><div><b class="serif">${num(u.terrace)}</b><span>${t("m2terr")}</span></div></div>
   ${u.garden?`<p class="note" style="margin:0 0 8px">${t("garden",Math.round(u.garden))}</p>`:""}
   <div class="price serif">${eur(u.price)}</div>
-  <div class="row fill" style="margin-top:12px">${walkOk?`<a class="btn pri" href="${tourHref()}">${t("tour")}</a><a class="btn" href="${walkHref()}">${t("plan3d")}</a>`:u.type=="PH"?`<a class="btn pri" href="${tourHref()}&u=ph">${t("tourPH")}</a>`:`<button class="btn pri" disabled>${t("tour_soon")}</button>`}<button class="btn" onclick="go('#/terrace/${u.id}')">${t("terr_view")}</button></div>
+  <div class="row fill" style="margin-top:12px">${walkOk?`<a class="btn pri" href="${tourHref()}">${t("tour")}</a><a class="btn" href="${walkHref()}">${t("plan3d")}</a>`:u.type=="PH"?`<a class="btn pri" href="${tourHref()}&u=ph">${t("tourPH")}</a><a class="btn" href="ph3d/index.html?lang=${LANG}">${t("walkPH")}</a>`:`<button class="btn pri" disabled>${t("tour_soon")}</button>`}<button class="btn" onclick="go('#/terrace/${u.id}')">${t("terr_view")}</button></div>
   ${walkOk?(u.id=="3C"?"":`<p class="note">${t("tour_note3c")}</p>`):(u.type=="PH"?(u.id=="PH1"?"":`<p class="note">${t("tour_notePH")}</p>`):`<p class="note">${t("tour_none")}</p>`)}
   <div class="row" style="margin-top:10px"><button class="btn sm ${fav?"on":""}" onclick="tog('fav','${u.id}')">${fav?t("fav_on"):t("fav_off")}</button><button class="btn sm ${cmp?"on":""}" onclick="tog('cmp','${u.id}')">${cmp?t("cmp_on"):t("cmp_off")}</button><button class="btn sm" onclick="share('${u.id}')">${t("share")}</button></div>
   <div class="card ${a?"agent":""}" style="margin-top:14px"><div style="font-size:12px;color:var(--mute)">${a?t("your_agent"):t("sales")}</div><b>${a?esc(a):t("contact_ph")}</b>
